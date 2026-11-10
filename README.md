@@ -34,6 +34,8 @@ dotnet run --project src/LaserMesh.Studio -c Release --no-build -- --stl samples
 - Abre [el G-code de muestra](samples/cuadro-lp2-simulacion.gcode), reproduce o desplaza el marcador y distingue grabado (ámbar) de desplazamiento (gris). El menú **Grabado** exporta G-code lineal genérico. La trayectoria se conserva como archivo aparte del proyecto. Studio no envía G-code ni arranca grabados.
 - **Prueba de posición** reproduce el recorrido en pantalla y muestra sus límites y origen. Con **Seguir pieza**, la proyección se actualiza al aplicar una nueva pose. La cuadrícula usa milímetros y conserva el cero de la escena en el centro del campo.
 
+Las pestañas **Escena**, **Campo LP2**, **Colocación** y **Bluetooth** agrupan los controles. En **Colocación**, selecciona **Contorno exacto** o **Rectángulo envolvente** y pulsa **Generar guía**. El contorno sigue las salientes visibles desde arriba. El rectángulo usa los extremos X/Y. **Exportar guía G-code** guarda las coordenadas de la escena en milímetros con el láser desactivado. La proyección física se habilitará cuando ambos modos estén validados para el LP2.
+
 El escritorio funciona sin dispositivos. El soporte Kinect actual consiste en un cliente IPC y su contrato binario.
 
 ## Documentación

@@ -106,6 +106,19 @@ internal sealed partial class StudioViewModel
             Status = $"Simulación · {Path.GetFileName(path)}";
         });
 
+    internal async Task ExportPlacementAsync(string path, PlacementGuide guide)
+    {
+        if (IsBusy)
+            return;
+
+        await RunAsync("Exportando guía", async token =>
+        {
+            var program = await Task.Run(() => guide.ToToolpath(token), token);
+            await gcode.SaveAsync(path, program, token);
+            Status = $"Guía exportada sin emisión · {Path.GetFileName(path)}";
+        });
+    }
+
     [RelayCommand]
     private async Task ExportToolpathAsync()
     {

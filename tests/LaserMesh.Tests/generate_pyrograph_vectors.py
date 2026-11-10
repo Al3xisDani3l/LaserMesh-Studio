@@ -26,6 +26,8 @@ commands = {
     "cached": module.query_file_cached(0xDEADBEEF, 2),
     "fields": module.build_frame(0x06, [(0xFF01, 1), (-2, 2), (0x01234567, 4)]),
     "max": module.build_frame(0x01, [(255, 1)] * module.MAX_DATA_LEN),
+    "preview_rect": module.preview_rect(-5.2, 3.4, 43.5, 15.8),
+    "preview_stop": module.preview_stop(),
 }
 payload = bytes([0x33, 0xAA, 0xBB, 0x08, 0xCC])
 long_reply = b"\xaa\xcc" + (len(payload) + 2).to_bytes(4, "big") + payload + sum(payload).to_bytes(2, "big")

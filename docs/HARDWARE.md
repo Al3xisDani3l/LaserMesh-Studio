@@ -24,6 +24,12 @@ El cono conserva su vértice en la lente virtual. Desde la lente hasta la altura
 
 Los arcos, offsets, ciclos, interpolación rotatoria y comandos ajenos al subconjunto se rechazan. El formato de transferencia G-code propietario del LP2 requiere evidencia adicional para habilitarlo. [Protocolo documentado por PyroGraph](https://github.com/nerdocs/pyrograph/blob/306f872a49fc347f04396bc2a4be912e6157a814/docs/protocol.md)
 
+### Guías de colocación
+
+El contorno une triángulos proyectados desde arriba. Conserva los perímetros exteriores de las componentes separadas y omite agujeros. El rectángulo se alinea con XY y usa las dimensiones máximas de la pieza ya transformada. La cota de la cara más alta solo eleva la guía visual. La exportación G-code guarda su XY absoluto, Z = 0 y movimientos sin emisión. Los cambios de pieza, pose o modo regeneran una guía activa localmente.
+
+La primera prueba física está condicionada a validar los dos modos para el mismo LP2. El marco rectangular solo tiene paridad de bytes con PyroGraph y simulación local. El contorno libre sigue pendiente de verificar en firmware 3.16. Antes de habilitar ambos, se requieren una captura o un ensayo sin emisión que confirme coordenadas, alimentación de geometría, inicio y parada. En la primera prueba física se requiere operador presente, protección cerrada, nivel mínimo verificado y confirmación de reposo entre modos. Una pérdida de enlace durante una proyección futura requiere tratar el estado del láser como desconocido hasta verificar la parada.
+
 El próximo transporte USB debe identificar el puerto explícitamente, respetar timeout y cancelación y filtrar respuestas según el comando en curso. PyroGraph documenta puentes CH340/CH9102 y 460800 baud, 8N1, sin control de flujo. Trátalo como referencia a contrastar en la unidad real. [Conexión según PyroGraph](https://github.com/nerdocs/pyrograph/blob/306f872a49fc347f04396bc2a4be912e6157a814/docs/connection.md)
 
 Requiere acción explícita del operador antes de movimiento, emisión láser o modificación. Mantén identificación, simulación y pruebas de codificación separadas de la prueba física. La primera sesión USB debe limitarse a enumeración, estado y versión. Firmware queda fuera del alcance inicial.

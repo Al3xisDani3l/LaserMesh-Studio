@@ -18,3 +18,7 @@ C# valida el framing antes de interpretar campos, rechaza cuerpos largos menores
 Validado el 10 de noviembre de 2026 en Windows con `LaserPecker-II103592`: descubrimiento por nombre exacto, consulta GATT de estado y versión, firmware 3.16, modo 6, error 0 y byte de enlace 1. Se verificó desde un diagnóstico .NET y desde Studio.
 
 Pendiente: recuperación durante desconexiones, compatibilidad con otros firmwares y perfiles, subida, gestión de archivos, movimiento, previsualización y grabado. El método alternativo `0xD0`, algunos estados y la gestión de almacenamiento siguen abiertos en el origen.
+
+Se verificaron byte por byte el inicio y la parada rectangulares contra vectores nuevos de `preview_rect` y `preview_stop`. El simulador en memoria reproduce arranque, consulta, parada y pérdida de enlace. Estas tramas carecen de un camino de envío desde Studio.
+
+La inspección estática sin emisión del paquete local LaserPecker Design Space Beta 3.2.4 encontró referencias a vista de contorno y rectángulo. Esto y el encabezado `0x20` publicado por PyroGraph no confirman una secuencia de previsualización vectorial para firmware LP2 3.16. Las notas oficiales también registran que la configuración de contorno se ocultó para LP2 en LDS Windows 2.10.0. La prueba conjunta solicitada queda pendiente. [Notas oficiales de LDS](https://support.laserpecker.net/hc/en-us/articles/9541633714703-LDS-for-Windows-Release-Notes)

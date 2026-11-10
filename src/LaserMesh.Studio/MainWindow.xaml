@@ -21,9 +21,8 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="38"/>
             <RowDefinition Height="46"/>
-            <RowDefinition Height="58"/>
-            <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
             <RowDefinition Height="52"/>
         </Grid.RowDefinitions>
 
@@ -80,7 +79,9 @@
             <MenuItem Header="_Configuración" IsEnabled="False"/>
         </Menu>
 
-        <Border Grid.Row="2" Background="{StaticResource ChromeBrush}" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,1">
+        <TabControl Grid.Row="2" Padding="8" Background="{StaticResource PanelBrush}"
+                    AutomationProperties.Name="Herramientas de Studio">
+            <TabItem Header="Escena">
             <DockPanel Margin="12,0" LastChildFill="True">
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
                     <ui:Button Content="Encuadrar" Click="OnFit" Margin="0,0,8,0"/>
@@ -106,7 +107,74 @@
                     <ui:Button Content="Guardar" Command="{Binding SaveCommand}"/>
                 </StackPanel>
             </DockPanel>
-        </Border>
+            </TabItem>
+            <TabItem Header="Campo LP2">
+                <StackPanel Margin="12,5">
+                <WrapPanel Orientation="Horizontal">
+                    <TextBlock Text="LP2 · CAMPO" Style="{StaticResource PanelLabel}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <CheckBox Content="Mostrar" IsChecked="{Binding ShowField}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="Altura (mm)" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <TextBox Text="{Binding FieldHeight, UpdateSourceTrigger=PropertyChanged}" Width="60" Margin="0,0,6,0"
+                             AutomationProperties.Name="Altura del campo en milímetros"/>
+                    <ui:Button Content="Aplicar altura" Command="{Binding ApplyFieldCommand}" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding FieldSummary}" Foreground="{StaticResource MutedBrush}"
+                               VerticalAlignment="Center" Margin="0,0,18,0"/>
+                    <ui:Button Content="Encuadrar campo" Click="OnFitField" IsEnabled="{Binding ShowField}"/>
+                </WrapPanel>
+                <WrapPanel Margin="0,5,0,0">
+                    <ui:Button x:Name="SelectFaceButton" Content="Elegir cara" Click="OnSelectFace" Margin="0,0,6,0"/>
+                    <ui:Button Content="Cara más alta" Click="OnHighestFace" Margin="0,0,6,0"/>
+                    <ui:Button x:Name="ClearFaceButton" Content="Quitar referencia" Click="OnClearFace" IsEnabled="False" Margin="0,0,10,0"/>
+                    <TextBlock x:Name="FaceSummary" Text="Origen XY (0.0, 0.0) · Z 0" Foreground="{StaticResource MutedBrush}"
+                               VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <CheckBox x:Name="TrackPose" Content="Seguir pieza" IsChecked="True" Checked="OnTrackPose" Unchecked="OnTrackPose"
+                              VerticalAlignment="Center"/>
+                </WrapPanel>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Colocación">
+                <StackPanel Margin="12,5">
+                    <WrapPanel>
+                        <ComboBox x:Name="PlacementModePicker" SelectedIndex="0" Margin="0,0,6,0"
+                                  SelectionChanged="OnPlacementModeChanged" AutomationProperties.Name="Modo de colocación">
+                            <ComboBoxItem Content="Contorno exacto"/>
+                            <ComboBoxItem Content="Rectángulo envolvente"/>
+                        </ComboBox>
+                        <ui:Button Content="Generar guía" Click="OnGeneratePlacement" Margin="0,0,6,0"/>
+                        <ui:Button x:Name="ExportPlacement" Content="Exportar guía G-code" IsEnabled="False"
+                                   Click="OnExportPlacement" Margin="0,0,6,0"/>
+                        <ui:Button Content="Previsualizar en LP2" IsEnabled="False" Margin="0,0,6,0"/>
+                        <ui:Button Content="Detener proyección" IsEnabled="False" Margin="0,0,6,0"/>
+                    </WrapPanel>
+                    <TextBlock x:Name="PlacementSummary" Text="Selecciona una malla y genera su guía."
+                               Style="{StaticResource PanelText}" Margin="0,4,0,0"/>
+                    <TextBlock Text="Proyección física pendiente de validar ambos modos en firmware 3.16."
+                               Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                <DockPanel Margin="0,6,0,0">
+                    <TextBlock DockPanel.Dock="Left" Text="G-CODE · SIMULACIÓN" Style="{StaticResource PanelLabel}"
+                               VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ui:Button DockPanel.Dock="Left" Content="Abrir" Command="{Binding OpenToolpathCommand}" Margin="0,0,6,0"/>
+                    <ui:Button DockPanel.Dock="Left" x:Name="PlayButton" Content="Reproducir" Click="OnTogglePlayback"
+                               IsEnabled="{Binding HasToolpath}" Margin="0,0,6,0"/>
+                    <ui:Button DockPanel.Dock="Left" x:Name="AlignmentButton" Content="Prueba de posición"
+                               Click="OnAlignmentTest" IsEnabled="{Binding HasToolpath}" Margin="0,0,6,0"
+                               ToolTip="Reproduce la trayectoria y sus límites en el visor, sin emisión."/>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding ToolpathSummary}" Foreground="{StaticResource MutedBrush}"
+                               VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    <Slider x:Name="PlaybackSlider" Minimum="0" Maximum="1" IsEnabled="{Binding HasToolpath}"
+                            VerticalAlignment="Center" ValueChanged="OnPlaybackPosition" AutomationProperties.Name="Posición de simulación"/>
+                </DockPanel>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Bluetooth">
+                <WrapPanel Margin="12,5">
+                    <TextBox Text="{Binding BluetoothName, UpdateSourceTrigger=PropertyChanged}" Width="175" Margin="0,0,6,0"
+                             AutomationProperties.Name="Nombre Bluetooth de LaserPecker"/>
+                    <ui:Button Content="Consultar BLE" Command="{Binding ProbeBluetoothCommand}"/>
+                    <ui:Button Content="Diagnóstico" Click="OnOpenLogs" Margin="6,0,0,0"/>
+                </WrapPanel>
+            </TabItem>
+        </TabControl>
 
         <Grid Grid.Row="3">
             <Grid.ColumnDefinitions>
@@ -174,6 +242,8 @@
                     <hx:MeshGeometryModel3D x:Name="FieldBelow" IsTransparent="True" CullMode="None" IsHitTestVisible="False"/>
                     <hx:LineGeometryModel3D x:Name="FieldOutline" Color="#668779B5" Thickness="1" IsHitTestVisible="False"/>
                     <hx:LineGeometryModel3D x:Name="FieldSection" Color="#DCC1F3" Thickness="1.1" IsHitTestVisible="False"/>
+                    <hx:LineGeometryModel3D x:Name="PlacementOutline" Color="#FFD46E" Thickness="3"
+                                            DepthBias="-100" IsHitTestVisible="False"/>
                     <hx:GroupModel3D x:Name="PlacedToolpath">
                         <hx:LineGeometryModel3D x:Name="TravelPath" Color="#72859B" Thickness="1.2" IsHitTestVisible="False"/>
                         <hx:LineGeometryModel3D x:Name="BurnPath" Color="#FFC274" Thickness="2" IsHitTestVisible="False"/>
@@ -232,48 +302,7 @@
                 </DockPanel>
             </Border>
         </Grid>
-        <Border Grid.Row="4" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource DividerBrush}"
-                BorderThickness="0,1,0,0" Padding="12,6">
-            <StackPanel>
-                <WrapPanel Orientation="Horizontal">
-                    <TextBlock Text="LP2 · CAMPO" Style="{StaticResource PanelLabel}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <CheckBox Content="Mostrar" IsChecked="{Binding ShowField}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <TextBlock Text="Altura (mm)" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                    <TextBox Text="{Binding FieldHeight, UpdateSourceTrigger=PropertyChanged}" Width="60" Margin="0,0,6,0"
-                             AutomationProperties.Name="Altura del campo en milímetros"/>
-                    <ui:Button Content="Aplicar altura" Command="{Binding ApplyFieldCommand}" Margin="0,0,8,0"/>
-                    <TextBlock Text="{Binding FieldSummary}" Foreground="{StaticResource MutedBrush}"
-                               VerticalAlignment="Center" Margin="0,0,18,0"/>
-                    <TextBox Text="{Binding BluetoothName, UpdateSourceTrigger=PropertyChanged}" Width="175" Margin="0,0,6,0"
-                             AutomationProperties.Name="Nombre Bluetooth de LaserPecker"/>
-                    <ui:Button Content="Consultar BLE" Command="{Binding ProbeBluetoothCommand}"/>
-                </WrapPanel>
-                <WrapPanel Margin="0,5,0,0">
-                    <ui:Button x:Name="SelectFaceButton" Content="Elegir cara" Click="OnSelectFace" Margin="0,0,6,0"/>
-                    <ui:Button Content="Cara más alta" Click="OnHighestFace" Margin="0,0,6,0"/>
-                    <ui:Button x:Name="ClearFaceButton" Content="Quitar referencia" Click="OnClearFace" IsEnabled="False" Margin="0,0,10,0"/>
-                    <TextBlock x:Name="FaceSummary" Text="Origen XY (0.0, 0.0) · Z 0" Foreground="{StaticResource MutedBrush}"
-                               VerticalAlignment="Center" Margin="0,0,12,0"/>
-                    <CheckBox x:Name="TrackPose" Content="Seguir pieza" IsChecked="True" Checked="OnTrackPose" Unchecked="OnTrackPose"
-                              VerticalAlignment="Center"/>
-                </WrapPanel>
-                <DockPanel Margin="0,6,0,0">
-                    <TextBlock DockPanel.Dock="Left" Text="G-CODE · SIMULACIÓN" Style="{StaticResource PanelLabel}"
-                               VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <ui:Button DockPanel.Dock="Left" Content="Abrir" Command="{Binding OpenToolpathCommand}" Margin="0,0,6,0"/>
-                    <ui:Button DockPanel.Dock="Left" x:Name="PlayButton" Content="Reproducir" Click="OnTogglePlayback"
-                               IsEnabled="{Binding HasToolpath}" Margin="0,0,6,0"/>
-                    <ui:Button DockPanel.Dock="Left" x:Name="AlignmentButton" Content="Prueba de posición"
-                               Click="OnAlignmentTest" IsEnabled="{Binding HasToolpath}" Margin="0,0,6,0"
-                               ToolTip="Reproduce la trayectoria y sus límites en el visor, sin emisión."/>
-                    <TextBlock DockPanel.Dock="Right" Text="{Binding ToolpathSummary}" Foreground="{StaticResource MutedBrush}"
-                               VerticalAlignment="Center" Margin="8,0,0,0"/>
-                    <Slider x:Name="PlaybackSlider" Minimum="0" Maximum="1" IsEnabled="{Binding HasToolpath}"
-                            VerticalAlignment="Center" ValueChanged="OnPlaybackPosition" AutomationProperties.Name="Posición de simulación"/>
-                </DockPanel>
-            </StackPanel>
-        </Border>
-        <Border Grid.Row="5" Background="{StaticResource ChromeBrush}" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,1,0,0">
+        <Border Grid.Row="4" Background="{StaticResource ChromeBrush}" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,1,0,0">
             <DockPanel LastChildFill="True" Margin="14,0">
                 <TextBlock DockPanel.Dock="Right" Text="{Binding BluetoothStatus}" Foreground="{StaticResource GreenBrush}"
                            FontSize="11" VerticalAlignment="Center" Margin="12,0,0,0"/>

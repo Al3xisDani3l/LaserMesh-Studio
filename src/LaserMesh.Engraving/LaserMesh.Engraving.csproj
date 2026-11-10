@@ -1,1 +1,6 @@
-<Project Sdk="Microsoft.NET.Sdk" />
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Clipper2" />
+    <ProjectReference Include="../LaserMesh.Geometry/LaserMesh.Geometry.csproj" />
+  </ItemGroup>
+</Project>

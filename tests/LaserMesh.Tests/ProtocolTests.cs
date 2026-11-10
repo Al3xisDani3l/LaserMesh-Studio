@@ -17,6 +17,8 @@ public sealed class ProtocolTests
     [InlineData("cached")]
     [InlineData("fields")]
     [InlineData("max")]
+    [InlineData("preview_rect")]
+    [InlineData("preview_stop")]
     public void CommandsMatchPyroGraphByteForByte(string name)
     {
         var actual = name switch
@@ -28,6 +30,8 @@ public sealed class ProtocolTests
             "cached" => LaserPeckerProtocol.QueryCachedFile(0xDEADBEEF, 2),
             "fields" => LaserPeckerProtocol.EncodeFields(6, (0xFF01, 1), (-2, 2), (0x01234567, 4)),
             "max" => LaserPeckerProtocol.Encode(1, Enumerable.Repeat((byte)255, 249).ToArray()),
+            "preview_rect" => RectanglePreviewProtocol.Start(-5.2, 3.4, 43.5, 15.8),
+            "preview_stop" => RectanglePreviewProtocol.Stop(),
             _ => throw new ArgumentOutOfRangeException(nameof(name))
         };
         Assert.Equal(Vector("commands", name), actual);
@@ -121,6 +125,32 @@ public sealed class ProtocolTests
         Assert.True(LaserPeckerReplies.Status(frame).Finished);
         Assert.Null(simulated.Exchange(LaserPeckerProtocol.Encode(1, [1]), default));
         Assert.Throws<OperationCanceledException>(() => simulated.Exchange(LaserPeckerProtocol.Query(0), new(true)));
+    }
+
+    [Fact]
+    public void SimulatesPreviewStartCancellationStopAndLostLink()
+    {
+        var simulated = new SimulatedTransport();
+        var start = RectanglePreviewProtocol.Start(0, 0, 20, 10);
+        var statusQuery = LaserPeckerProtocol.Query(0);
+        Assert.Throws<OperationCanceledException>(() => simulated.Exchange(start, new(true)));
+        Assert.Equal(6, ReadMode());
+        Assert.Null(simulated.Exchange(start, default));
+        Assert.Equal(2, ReadMode());
+        Assert.Throws<OperationCanceledException>(() => simulated.Exchange(statusQuery, new(true)));
+        Assert.Null(simulated.Exchange(RectanglePreviewProtocol.Stop(), default));
+        Assert.Equal(6, ReadMode());
+        Assert.Null(simulated.Exchange(start, default));
+        simulated.Disconnect();
+        Assert.Throws<IOException>(() => simulated.Exchange(RectanglePreviewProtocol.Stop(), default));
+        Assert.Throws<IOException>(() => simulated.Exchange(start, default));
+        Assert.Throws<IOException>(() => simulated.Exchange(statusQuery, default));
+
+        byte ReadMode()
+        {
+            Assert.True(LaserPeckerProtocol.TryDecode(simulated.Exchange(statusQuery, default), out var frame));
+            return LaserPeckerReplies.Status(frame).Mode;
+        }
     }
 
     private static byte[] Vector(string group, string name)

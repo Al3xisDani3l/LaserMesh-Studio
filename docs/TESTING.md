@@ -40,3 +40,5 @@ En Studio se verificaron la importación y el encuadre STL, el picking con clic 
 La comprobación física de BLE se ejecuta por separado con **Consultar BLE**. El equipo `LaserPecker-II103592` contestó estado y versión tanto desde el cliente .NET como desde Studio. No hubo emisión láser ni movimiento.
 
 La verificación de referencia de cara pasó 47 pruebas en Release. En Windows se comprobaron las etiquetas en mm, el cero central, la selección manual y automática de cara, el corte naranja, la prueba virtual y la restauración de un proyecto. Al aplicar +20 mm de traslación Z al tetraedro durante la reproducción, la referencia pasó de Z 8.05 a Z 28.05 mm, y el cono y la trayectoria se actualizaron juntos.
+
+Las guías de colocación pasaron 56 pruebas en Release. En Windows se verificaron importación y encuadre, restauración de la pose, contorno con dos salientes y rectángulo de 27 × 45 mm. Una traslación de +10 mm en X recalculó la guía de X −2…25 a X 8…35 sin cambiar el tamaño. La suite comprueba la ida y vuelta del G-code sin emisión, y el inicio, la parada, la cancelación y la desconexión del transporte rectangular simulado.

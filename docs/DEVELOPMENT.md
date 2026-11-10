@@ -12,6 +12,7 @@ Requisitos de la aplicación: Windows x64, SDK estable .NET 10 y entorno gráfic
 | [Serilog.Sinks.File](https://www.nuget.org/packages/Serilog.Sinks.File/7.0.0) | 7.0.0 | Activos .NET 9 y anteriores compatibles. Apache-2.0. |
 | [xUnit](https://www.nuget.org/packages/xunit/2.9.3) y [adaptador VS](https://www.nuget.org/packages/xunit.runner.visualstudio/3.1.5) | 2.9.3 y 3.1.5 | Herramientas de prueba compatibles con VSTest en .NET 10. Apache-2.0. |
 | [Microsoft.NET.Test.Sdk](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk/18.6.0) | 18.6.0 | Host de pruebas. MIT. |
+| [Clipper2](https://www.nuget.org/packages/Clipper2/2.0.0) | 2.0.0 | Unión poligonal en .NET Standard 2.0. Boost Software License 1.0. Su repositorio de origen está archivado. |
 
 Las versiones directas están en `Directory.Packages.props`. Para actualizarlas, revisa activos, licencia, historial del mantenedor, dependencias transitivas, vulnerabilidades y compatibilidad en ejecución. Helix usa una pila DirectX heredada a través de SharpDX. Verifica viewport y picking al actualizarla.
 

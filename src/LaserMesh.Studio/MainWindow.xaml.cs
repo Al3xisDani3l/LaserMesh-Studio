@@ -91,7 +91,10 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(StudioViewModel.Selected))
+        {
             SyncSelection();
+            RefreshPlacement();
+        }
     }
 
     private void SyncSelection()
@@ -270,6 +273,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
     private void OnClosed(object? sender, EventArgs e)
     {
+        ReleasePlacement();
         ReleaseEngraving();
         viewModel.SceneChanged -= SyncScene;
         viewModel.PropertyChanged -= OnViewModelChanged;

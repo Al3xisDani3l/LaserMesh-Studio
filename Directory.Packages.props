@@ -3,6 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Clipper2" Version="2.0.0" />
     <PackageVersion Include="WPF-UI" Version="4.3.0" />
     <PackageVersion Include="HelixToolkit.Wpf.SharpDX" Version="3.1.2" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
