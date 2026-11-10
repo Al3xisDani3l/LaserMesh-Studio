@@ -1,6 +1,8 @@
 using System.IO;
 using System.Windows;
+using LaserMesh.Engraving;
 using LaserMesh.Geometry;
+using LaserMesh.Hardware.LaserPecker.Bluetooth;
 using LaserMesh.Projects;
 using LaserMesh.Rendering;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +30,8 @@ public partial class App : Application
             builder.Services.AddSingleton<StlCodec>();
             builder.Services.AddSingleton<ProjectStore>();
             builder.Services.AddSingleton<MeshAdapter>();
+            builder.Services.AddSingleton<GCodeCodec>();
+            builder.Services.AddSingleton<LaserPeckerBluetooth>();
             builder.Services.AddSingleton(new RecentProjects(Path.Combine(data, "recent.json")));
             builder.Services.AddSingleton<StudioViewModel>();
             builder.Services.AddSingleton(sp => new MainWindow(sp.GetRequiredService<StudioViewModel>(),
@@ -49,6 +53,11 @@ public partial class App : Application
 
     private async Task OpenStartupFileAsync(string[] args, StudioViewModel studio)
     {
+        if (args is ["--gcode", var gcode])
+        {
+            await studio.OpenToolpathFileAsync(Path.GetFullPath(gcode));
+            return;
+        }
         if (args is [var project] && string.Equals(Path.GetExtension(project), ".lmeshproj", StringComparison.OrdinalIgnoreCase))
         {
             await studio.OpenRecentAsync(Path.GetFullPath(project));
@@ -65,7 +74,7 @@ public partial class App : Application
             }
         }
 
-        MessageBox.Show(MainWindow, "Usa un archivo .lmeshproj o --stl archivo.stl mm|cm|m|in.",
+        MessageBox.Show(MainWindow, "Usa un archivo .lmeshproj, --stl archivo.stl mm|cm|m|in o --gcode archivo.gcode.",
             "Argumentos de inicio", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 

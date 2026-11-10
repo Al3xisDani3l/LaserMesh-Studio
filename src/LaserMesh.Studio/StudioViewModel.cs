@@ -5,7 +5,9 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HelixToolkit.SharpDX;
+using LaserMesh.Engraving;
 using LaserMesh.Geometry;
+using LaserMesh.Hardware.LaserPecker.Bluetooth;
 using LaserMesh.Projects;
 using LaserMesh.Rendering;
 using Microsoft.Extensions.Logging;
@@ -35,12 +37,14 @@ internal sealed partial class StudioViewModel : ObservableObject
     private string? projectPath;
 
     public StudioViewModel(StlCodec stl, ProjectStore store, MeshAdapter meshAdapter, RecentProjects recents,
-        ILogger<StudioViewModel> log)
+        GCodeCodec gcode, LaserPeckerBluetooth bluetooth, ILogger<StudioViewModel> log)
     {
         this.stl = stl;
         this.store = store;
         this.meshAdapter = meshAdapter;
         this.recents = recents;
+        this.gcode = gcode;
+        this.bluetooth = bluetooth;
         this.log = log;
         try
         {
@@ -122,6 +126,7 @@ internal sealed partial class StudioViewModel : ObservableObject
             return;
         Models = [];
         Selected = null;
+        ClearToolpath();
         UpdateDocument(null, false);
         SceneChanged?.Invoke(true);
         Status = message;
@@ -152,6 +157,7 @@ internal sealed partial class StudioViewModel : ObservableObject
 
             Models = prepared;
             Selected = Models.FirstOrDefault();
+            ClearToolpath();
             UpdateDocument(path, false);
             SceneChanged?.Invoke(true);
             await RecordRecentAsync(path);
@@ -297,7 +303,7 @@ internal sealed partial class StudioViewModel : ObservableObject
             return false;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or ArgumentException
-            or InvalidDataException)
+            or InvalidDataException or TimeoutException)
         {
             log.LogWarning(ex, "Failed to execute {Operation}", action);
             Status = $"Error · {ex.Message}";

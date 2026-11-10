@@ -5,7 +5,7 @@ Origen: [nerdocs/pyrograph](https://github.com/nerdocs/pyrograph). Commit fijado
 | Archivo analizado | Hallazgo y estado |
 | --- | --- |
 | `protocol.py` | Portado framing, campos, consultas y parsers. Quedan builders especializados de trabajo, estructura raster y lista larga interpretada. |
-| `transport.py` | Portado el comportamiento de ensamblado de tramas y un subconjunto de simulación de consultas. USB y BLE pendientes. |
+| `transport.py` | Portados ensamblado, simulación de consultas y los tres perfiles BLE GATT. WinRT usa el adaptador local de Windows. USB y escritura por lotes siguen pendientes. |
 | `device.py` | Analizados la correlación, los acuses espontáneos y la negociación de transferencia. Driver de sesión pendiente. |
 | `imaging.py` | Analizados dithering, empaquetado, raster e ID por contenido. Port pendiente. |
 | `cli.py` | Revisadas consultas, parámetros de trabajo y separación de ejecución. El port no necesita la CLI. |
@@ -15,4 +15,6 @@ Los vectores de salida se generan mediante el `protocol.py` original. Las entrad
 
 C# valida el framing antes de interpretar campos, rechaza cuerpos largos menores a dos bytes y limita asignaciones. Campos opcionales se leen solo cuando existen. Los IDs se validan contra el conteo. La simulación solo responde consultas seleccionadas y usa datos en memoria.
 
-Pendiente de validación física en LaserMesh Studio: conexión, estado, versión, reconexión, selección de dispositivo, subida, gestión de archivos, movimiento, previsualización y grabado. Los resultados históricos de PyroGraph no acreditan la ejecución del port sobre un dispositivo. El método alternativo `0xD0`, algunos estados y la gestión de almacenamiento siguen abiertos en el origen.
+Validado el 10 de noviembre de 2026 en Windows con `LaserPecker-II103592`: descubrimiento por nombre exacto, consulta GATT de estado y versión, firmware 3.16, modo 6, error 0 y byte de enlace 1. Se verificó desde un diagnóstico .NET y desde Studio.
+
+Pendiente: recuperación durante desconexiones, compatibilidad con otros firmwares y perfiles, subida, gestión de archivos, movimiento, previsualización y grabado. El método alternativo `0xD0`, algunos estados y la gestión de almacenamiento siguen abiertos en el origen.

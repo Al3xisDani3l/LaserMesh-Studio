@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../LaserMesh.Geometry/LaserMesh.Geometry.csproj" />
+    <ProjectReference Include="../LaserMesh.Engraving/LaserMesh.Engraving.csproj" />
     <PackageReference Include="HelixToolkit.Wpf.SharpDX" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,6 @@
 # Desarrollo
 
-Requisitos de la aplicación: Windows x64, SDK estable .NET 10 y entorno gráfico DirectX. Los módulos de geometría, proyectos, escaneo y protocolo se prueban con xUnit. El flujo normal de compilación no requiere Kinect SDK, Python ni LaserPecker Design Space.
+Requisitos de la aplicación: Windows x64, SDK estable .NET 10 y entorno gráfico DirectX. El destino Windows 10.0.19041.0 incorpora las proyecciones WinRT para BLE. Los módulos de geometría, proyectos, grabado, escaneo y protocolo se prueban con xUnit. El flujo normal de compilación no requiere Kinect SDK, Python ni LaserPecker Design Space.
 
 | Paquete | Versión fijada | Compatibilidad y licencia |
 | --- | --- | --- |
@@ -17,4 +17,4 @@ Las versiones directas están en `Directory.Packages.props`. Para actualizarlas,
 
 Diagnóstico local: `%LOCALAPPDATA%\LaserMeshStudio\logs`. Los recientes residen en `recent.json` en el mismo directorio de datos. Los logs incluyen rutas locales y conteos para diagnosticar la apertura, importación o escritura.
 
-En esta estación se verificó con una copia portátil del SDK 10.0.300, validada por SHA-512 a partir del catálogo oficial. El SDK global reportaba la versión pero carecía de `sdk\10.0.300\dotnet.dll`. Usa el SDK global una vez que vuelva a estar operativo o ejecuta el `dotnet.exe` de la copia portátil en `%LOCALAPPDATA%\LaserMeshStudio\verification-sdk-10.0.300`.
+La integración BLE y G-code se verificó con el SDK global 10.0.403.

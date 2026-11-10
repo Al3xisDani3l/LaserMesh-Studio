@@ -30,3 +30,11 @@ La CI de GitHub compila y ejecuta las pruebas Release en Windows. La prueba visu
 Verificación local en Windows x64 con SDK 10.0.300: Release con 0 advertencias, 0 errores y 34 pruebas aprobadas. NuGet no reportó vulnerabilidades de dependencias directas o transitivas. Los vectores de PyroGraph se regeneraron byte por byte.
 
 En Studio se comprobó arranque sin hardware, importación de la muestra por argumento de inicio, encuadre, vista ortográfica, picking, modo alámbrico, giro de 35°, guardado, cierre y reapertura desde Recientes con el giro conservado. El selector nativo de importación se abrió, pero la automatización del campo de ruta quedó sin verificar. Queda pendiente medir rendimiento con mallas grandes.
+
+## Bluetooth, campo y simulación
+
+La comprobación del 10 de noviembre de 2026 con SDK 10.0.403 pasó 45 pruebas. La suite incluye modos G-code, conversión de unidades, avance, interpolación, exportación y campo geométrico.
+
+En Studio se verificaron la importación y el encuadre STL, el picking con clic derecho, la duplicación, el foco en la traslación desde **Mover objeto**, la restauración del proyecto y su giro de 35°, y el cambio de campo a 110 × 110 mm geométricos con la lente virtual a 121 mm. La muestra G-code dibujó ocho segmentos y el marcador avanzó durante la reproducción.
+
+La comprobación física de BLE se ejecuta por separado con **Consultar BLE**. El equipo `LaserPecker-II103592` contestó estado y versión tanto desde el cliente .NET como desde Studio. No hubo emisión láser ni movimiento.

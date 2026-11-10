@@ -25,7 +25,14 @@ También puedes abrir un proyecto pasando su ruta como argumento. Para un STL, i
 dotnet run --project src/LaserMesh.Studio -c Release --no-build -- --stl samples/tetraedro-40x30x20.stl mm
 ```
 
-El escritorio funciona sin dispositivos. El protocolo LP2 vive en un módulo independiente con simulación en memoria. El soporte Kinect actual consiste en un cliente IPC y su contrato binario.
+## Escena, Bluetooth y G-code
+
+- Haz clic derecho sobre una malla para duplicarla, moverla con el inspector o quitarla de la escena. Arrastra con el botón derecho para orbitar.
+- En **LP2 · Campo**, ajusta la altura virtual y pulsa **Aplicar altura**. El área nominal es 100 × 100 mm con foco a 110 mm. Fuera de ese plano, el volumen tenue solo estima la cobertura geométrica.
+- Pulsa **Consultar BLE** para buscar `LaserPecker-II103592` con el adaptador de Windows, leer estado y firmware y cerrar la sesión. El nombre se puede editar.
+- Abre [el G-code de muestra](samples/cuadro-lp2-simulacion.gcode), reproduce o desplaza el marcador y distingue grabado (ámbar) de desplazamiento (gris). El menú **Grabado** exporta G-code lineal genérico. La trayectoria se conserva como archivo aparte del proyecto. Studio no envía G-code ni arranca grabados.
+
+El escritorio funciona sin dispositivos. El soporte Kinect actual consiste en un cliente IPC y su contrato binario.
 
 ## Documentación
 

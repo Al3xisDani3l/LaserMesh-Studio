@@ -42,6 +42,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         UpdateGrid(10);
         viewModel.SceneChanged += SyncScene;
         viewModel.PropertyChanged += OnViewModelChanged;
+        InitializeEngraving();
         Closing += OnClosing;
         Closed += OnClosed;
     }
@@ -70,7 +71,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             element.Transform = Transform(model.Pose);
         }
 
-        EmptyScene.Visibility = visuals.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        UpdateEmptyScene();
         SyncSelection();
         ApplyWireframe();
         if (fit)
@@ -102,11 +103,14 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     }
 
     private void OnPick(object sender, MouseButtonEventArgs e)
+        => viewModel.Selected = Pick(e.GetPosition(Viewport));
+
+    private SceneItem? Pick(Point point)
     {
-        var hit = Viewport.FindHits(e.GetPosition(Viewport))?
+        var hit = Viewport.FindHits(point)?
             .FirstOrDefault(x => x.ModelHit is MeshGeometryModel3D model && visuals.ContainsValue(model));
         var visual = hit?.ModelHit as MeshGeometryModel3D;
-        viewModel.Selected = visual is null ? null
+        return visual is null ? null
             : viewModel.Models.FirstOrDefault(x => visuals.GetValueOrDefault(x.Model.Id) == visual);
     }
 
@@ -153,15 +157,24 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         FitScene();
     }
 
-    private void FitScene()
+    private void FitScene(bool fieldOnly = false)
     {
         var bounds = Rect3D.Empty;
-        foreach (var item in viewModel.Models)
+        if (!fieldOnly)
         {
-            var min = item.Model.Mesh.Minimum;
-            var dimensions = item.Model.Mesh.Dimensions;
-            var local = new Rect3D(min.X, min.Y, min.Z, dimensions.X, dimensions.Y, dimensions.Z);
-            bounds.Union(Transform(item.Model.Pose).TransformBounds(local));
+            foreach (var item in viewModel.Models)
+            {
+                var min = item.Model.Mesh.Minimum;
+                var dimensions = item.Model.Mesh.Dimensions;
+                var local = new Rect3D(min.X, min.Y, min.Z, dimensions.X, dimensions.Y, dimensions.Z);
+                bounds.Union(Transform(item.Model.Pose).TransformBounds(local));
+            }
+            bounds.Union(toolpathBounds);
+        }
+        if (bounds.IsEmpty && viewModel.ShowField)
+        {
+            var width = viewModel.Field.PlaneWidth;
+            bounds = new Rect3D(-width / 2, -width / 2, 0, width, width, viewModel.Field.Height);
         }
 
         if (bounds.IsEmpty)
@@ -246,6 +259,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
     private void OnClosed(object? sender, EventArgs e)
     {
+        ReleaseEngraving();
         viewModel.SceneChanged -= SyncScene;
         viewModel.PropertyChanged -= OnViewModelChanged;
         Scene.Children.Clear();

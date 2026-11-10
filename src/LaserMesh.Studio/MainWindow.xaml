@@ -23,6 +23,7 @@
             <RowDefinition Height="46"/>
             <RowDefinition Height="58"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="52"/>
         </Grid.RowDefinitions>
 
@@ -62,7 +63,15 @@
                 <MenuItem Header="Aplicar transformación del inspector" Command="{Binding ApplyPoseCommand}"/>
             </MenuItem>
             <MenuItem Header="_Diseño" IsEnabled="False"/>
-            <MenuItem Header="_Grabado" IsEnabled="False"/>
+            <MenuItem Header="_Grabado">
+                <MenuItem Header="Consultar LaserPecker por Bluetooth" Command="{Binding ProbeBluetoothCommand}"/>
+                <Separator/>
+                <MenuItem Header="Abrir G-code…" Command="{Binding OpenToolpathCommand}"/>
+                <MenuItem Header="Exportar G-code genérico…" Command="{Binding ExportToolpathCommand}"
+                          IsEnabled="{Binding HasToolpath}"/>
+                <MenuItem Header="Quitar trayectoria" Command="{Binding RemoveToolpathCommand}" IsEnabled="{Binding HasToolpath}"/>
+                <MenuItem Header="Encuadrar campo de grabado" Click="OnFitField" IsEnabled="{Binding ShowField}"/>
+            </MenuItem>
             <MenuItem Header="_Herramientas">
                 <MenuItem Header="Abrir carpeta de diagnóstico" Click="OnOpenLogs"/>
             </MenuItem>
@@ -140,7 +149,16 @@
             <Grid Grid.Column="2">
                 <hx:Viewport3DX x:Name="Viewport" BackgroundColor="#171A21" ModelUpDirection="0,0,1"
                     ShowCoordinateSystem="True" ShowViewCube="True" IsHitTestVisible="True"
-                    EnableMouseButtonHitTest="False" PreviewMouseLeftButtonDown="OnPick">
+                    EnableMouseButtonHitTest="False" PreviewMouseLeftButtonDown="OnPick"
+                    PreviewMouseRightButtonDown="OnObjectMenuDown" PreviewMouseRightButtonUp="OnObjectMenuUp"
+                    PreviewMouseMove="OnObjectMenuMove">
+                    <hx:Viewport3DX.Resources>
+                        <ContextMenu x:Key="ObjectMenu" Placement="MousePoint">
+                            <MenuItem Header="Duplicar objeto" Command="{Binding DuplicateCommand}"/>
+                            <MenuItem Header="Mover objeto…" Command="{Binding MoveCommand}"/>
+                            <MenuItem Header="Eliminar de la escena" Command="{Binding RemoveCommand}"/>
+                        </ContextMenu>
+                    </hx:Viewport3DX.Resources>
                     <hx:AmbientLight3D Color="#606978"/>
                     <hx:DirectionalLight3D Direction="1,-2,-3" Color="#FFFFFF"/>
                     <hx:DirectionalLight3D Direction="-2,1,-1" Color="#7481A0"/>
@@ -149,6 +167,11 @@
                     <hx:LineGeometryModel3D x:Name="AxisY" Color="#8CE1B7" Thickness="1.5" IsHitTestVisible="False"/>
                     <hx:LineGeometryModel3D x:Name="AxisZ" Color="#AB99F5" Thickness="1.5" IsHitTestVisible="False"/>
                     <hx:GroupModel3D x:Name="Scene"/>
+                    <hx:MeshGeometryModel3D x:Name="FieldSides" IsTransparent="True" CullMode="None" IsHitTestVisible="False"/>
+                    <hx:LineGeometryModel3D x:Name="FieldOutline" Color="#668779B5" Thickness="1" IsHitTestVisible="False"/>
+                    <hx:LineGeometryModel3D x:Name="TravelPath" Color="#72859B" Thickness="1.2" IsHitTestVisible="False"/>
+                    <hx:LineGeometryModel3D x:Name="BurnPath" Color="#FFC274" Thickness="2" IsHitTestVisible="False"/>
+                    <hx:LineGeometryModel3D x:Name="ToolMarker" Color="#FFFFFF" Thickness="2.5" IsHitTestVisible="False"/>
                 </hx:Viewport3DX>
                 <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12" Padding="10,6" IsHitTestVisible="False"
                         Background="{StaticResource ChromeBrush}" CornerRadius="3">
@@ -184,7 +207,7 @@
                                 <TextBlock Text="TRANSFORMACIÓN" Style="{StaticResource PanelLabel}" Margin="0,10,0,8"/>
                                 <TextBlock Text="Traslación X / Y / Z (mm)" Style="{StaticResource PanelText}" Margin="0,0,0,6"/>
                                 <UniformGrid Columns="3">
-                                    <TextBox Text="{Binding X, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,4,0"
+                                    <TextBox x:Name="MoveX" Text="{Binding X, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,4,0"
                                              AutomationProperties.Name="Traslación X"/>
                                     <TextBox Text="{Binding Y, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,4,0"
                                              AutomationProperties.Name="Traslación Y"/>
@@ -201,9 +224,38 @@
                 </DockPanel>
             </Border>
         </Grid>
-        <Border Grid.Row="4" Background="{StaticResource ChromeBrush}" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,1,0,0">
+        <Border Grid.Row="4" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource DividerBrush}"
+                BorderThickness="0,1,0,0" Padding="12,6">
+            <StackPanel>
+                <WrapPanel Orientation="Horizontal">
+                    <TextBlock Text="LP2 · CAMPO" Style="{StaticResource PanelLabel}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <CheckBox Content="Mostrar" IsChecked="{Binding ShowField}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="Altura (mm)" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <TextBox Text="{Binding FieldHeight, UpdateSourceTrigger=PropertyChanged}" Width="60" Margin="0,0,6,0"
+                             AutomationProperties.Name="Altura del campo en milímetros"/>
+                    <ui:Button Content="Aplicar altura" Command="{Binding ApplyFieldCommand}" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding FieldSummary}" Foreground="{StaticResource MutedBrush}"
+                               VerticalAlignment="Center" Margin="0,0,18,0"/>
+                    <TextBox Text="{Binding BluetoothName, UpdateSourceTrigger=PropertyChanged}" Width="175" Margin="0,0,6,0"
+                             AutomationProperties.Name="Nombre Bluetooth de LaserPecker"/>
+                    <ui:Button Content="Consultar BLE" Command="{Binding ProbeBluetoothCommand}"/>
+                </WrapPanel>
+                <DockPanel Margin="0,6,0,0">
+                    <TextBlock DockPanel.Dock="Left" Text="G-CODE · SIMULACIÓN" Style="{StaticResource PanelLabel}"
+                               VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ui:Button DockPanel.Dock="Left" Content="Abrir" Command="{Binding OpenToolpathCommand}" Margin="0,0,6,0"/>
+                    <ui:Button DockPanel.Dock="Left" x:Name="PlayButton" Content="Reproducir" Click="OnTogglePlayback"
+                               IsEnabled="{Binding HasToolpath}" Margin="0,0,6,0"/>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding ToolpathSummary}" Foreground="{StaticResource MutedBrush}"
+                               VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    <Slider x:Name="PlaybackSlider" Minimum="0" Maximum="1" IsEnabled="{Binding HasToolpath}"
+                            VerticalAlignment="Center" ValueChanged="OnPlaybackPosition" AutomationProperties.Name="Posición de simulación"/>
+                </DockPanel>
+            </StackPanel>
+        </Border>
+        <Border Grid.Row="5" Background="{StaticResource ChromeBrush}" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,1,0,0">
             <DockPanel LastChildFill="True" Margin="14,0">
-                <TextBlock DockPanel.Dock="Right" Text="●  SIN CONEXIÓN A HARDWARE" Foreground="{StaticResource GreenBrush}"
+                <TextBlock DockPanel.Dock="Right" Text="{Binding BluetoothStatus}" Foreground="{StaticResource GreenBrush}"
                            FontSize="11" VerticalAlignment="Center" Margin="12,0,0,0"/>
                 <TextBlock DockPanel.Dock="Right" Text="Órbita: botón derecho · Pan: Mayús + botón derecho · Zoom: rueda"
                            Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" FontSize="11" Margin="12,0,0,0"/>

@@ -9,6 +9,7 @@
     <ProjectReference Include="../../src/LaserMesh.Projects/LaserMesh.Projects.csproj" />
     <ProjectReference Include="../../src/LaserMesh.Hardware.LaserPecker/LaserMesh.Hardware.LaserPecker.csproj" />
     <ProjectReference Include="../../src/LaserMesh.Scanning/LaserMesh.Scanning.csproj" />
+    <ProjectReference Include="../../src/LaserMesh.Engraving/LaserMesh.Engraving.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />

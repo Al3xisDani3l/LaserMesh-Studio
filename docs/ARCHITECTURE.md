@@ -8,8 +8,12 @@
 | `LaserMesh.Projects` | Modelos del proyecto, poses y almacenamiento versionado. |
 | `LaserMesh.Scanning` | Cliente Named Pipes y contratos binarios de Kinect. |
 | `LaserMesh.Hardware.LaserPecker` | Framing, respuestas y simulación local. |
+| `LaserMesh.Hardware.LaserPecker.Bluetooth` | Descubrimiento y consultas BLE GATT mediante WinRT. |
+| `LaserMesh.Engraving` | Trayectoria, codec lineal G-code y geometría analítica del campo de trabajo. |
 
-Studio usa Geometry, Projects y Rendering. Projects y Rendering usan Geometry. Scanning y Hardware.LaserPecker se construyen y prueban de forma independiente. El escritorio puede iniciar aunque falten SDK, drivers o dispositivos.
+Studio compone Geometry, Projects, Rendering, Engraving y el cliente Bluetooth. Rendering proyecta los datos de Geometry y Engraving sobre Helix. El cliente Bluetooth consume el protocolo LP2. El escritorio puede iniciar aunque falten SDK, drivers o dispositivos.
+
+El campo de grabado tiene origen en el centro del plano XY de la escena. Su vértice está en +Z y la base está en Z = 0. La altura del campo y la trayectoria G-code son datos de simulación de la sesión. La duplicación, traslación y eliminación cambian los modelos del proyecto y usan su guardado normal.
 
 El STL se analiza en un hilo de trabajo. Geometry usa `System.Numerics.Vector3` y recalcula normales planas según el orden de vértices. Rendering prepara buffers e índices de picking fuera del Dispatcher. La creación y vinculación de los elementos WPF ocurre en el Dispatcher.
 

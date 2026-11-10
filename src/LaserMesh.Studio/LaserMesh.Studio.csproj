@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <UseWPF>true</UseWPF>
     <PlatformTarget>x64</PlatformTarget>
     <OutputType>WinExe</OutputType>
@@ -9,6 +9,8 @@
     <ProjectReference Include="../LaserMesh.Geometry/LaserMesh.Geometry.csproj" />
     <ProjectReference Include="../LaserMesh.Projects/LaserMesh.Projects.csproj" />
     <ProjectReference Include="../LaserMesh.Rendering/LaserMesh.Rendering.csproj" />
+    <ProjectReference Include="../LaserMesh.Engraving/LaserMesh.Engraving.csproj" />
+    <ProjectReference Include="../LaserMesh.Hardware.LaserPecker.Bluetooth/LaserMesh.Hardware.LaserPecker.Bluetooth.csproj" />
     <PackageReference Include="WPF-UI" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />

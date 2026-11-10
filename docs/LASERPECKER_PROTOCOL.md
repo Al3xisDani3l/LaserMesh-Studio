@@ -8,4 +8,6 @@ Fuente de referencia: [protocolo PyroGraph fijado](https://github.com/nerdocs/py
 - El ensamblador conserva fragmentos, separa tramas consecutivas y descarta prefijos inválidos y candidatos con checksum incorrecto. Una longitud plausible pero incompleta requiere timeout y reinicio del ensamblador.
 - Los parsers de estado, versión, MAC, nombre, IDs y acuse de archivo reciben una trama previamente validada. La futura sesión deberá asociar respuestas a su solicitud y separar acuses espontáneos.
 
-Solo se exponen builders específicos de consulta. El codificador genérico permite formar bytes en memoria. No existe un camino de envío físico.
+El cliente WinRT envía únicamente consultas de estado (0) y versión (3), de 11 bytes por consulta. Se suscribe a notificaciones antes de escribir sin respuesta y usa el ensamblador de tramas para validar respuestas. La sesión filtra la función y longitud esperadas, aplica timeout y libera el dispositivo tras la consulta.
+
+El tag `0x20` de G-code está identificado en la referencia upstream. El simulador y el exportador genérico son independientes del formato binario y del transporte del LP2.
