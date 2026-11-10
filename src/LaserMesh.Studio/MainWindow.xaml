@@ -1,0 +1,218 @@
+<ui:FluentWindow x:Class="LaserMesh.Studio.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:hx="http://helix-toolkit.org/wpf/SharpDX"
+    Title="LaserMesh Studio" Width="1440" Height="900" MinWidth="960" MinHeight="680"
+    WindowStartupLocation="CenterScreen" ExtendsContentIntoTitleBar="True"
+    Background="{StaticResource BaseBrush}" Foreground="{StaticResource TextBrush}" FontFamily="Segoe UI">
+    <ui:FluentWindow.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+        <Style x:Key="PanelText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style x:Key="InspectorLabel" TargetType="TextBlock" BasedOn="{StaticResource PanelText}">
+            <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+            <Setter Property="Margin" Value="0,12,0,3"/>
+        </Style>
+    </ui:FluentWindow.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="38"/>
+            <RowDefinition Height="46"/>
+            <RowDefinition Height="58"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="52"/>
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Grid.Row="0" Title="LaserMesh Studio" Background="{StaticResource ChromeBrush}"/>
+        <Menu Grid.Row="1" Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}"
+              VerticalContentAlignment="Center" Padding="8,0">
+            <MenuItem Header="_Proyecto">
+                <MenuItem Header="_Nuevo" Command="{Binding NewCommand}"/>
+                <MenuItem Header="_Abrir…" Command="{Binding OpenCommand}"/>
+                <MenuItem Header="_Recientes" ItemsSource="{Binding RecentPaths}">
+                    <MenuItem.ItemContainerStyle>
+                        <Style TargetType="MenuItem">
+                            <Setter Property="Header" Value="{Binding}"/>
+                            <EventSetter Event="Click" Handler="OnRecentClick"/>
+                        </Style>
+                    </MenuItem.ItemContainerStyle>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Importar STL…" Command="{Binding ImportCommand}"/>
+                <MenuItem Header="_Guardar" Command="{Binding SaveCommand}"/>
+                <MenuItem Header="Guardar _como…" Command="{Binding SaveAsCommand}"/>
+                <MenuItem Header="_Cerrar proyecto" Command="{Binding CloseProjectCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_Editar">
+                <MenuItem Header="Quitar selección del proyecto" Command="{Binding RemoveCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_Ver">
+                <MenuItem Header="Encuadrar" Click="OnFit"/>
+                <MenuItem Header="Perspectiva" Click="OnPerspective"/>
+                <MenuItem Header="Ortográfica isométrica" Click="OnOrthographic"/>
+                <MenuItem Header="Superior" Click="OnTop"/>
+                <MenuItem Header="Frontal" Click="OnFront"/>
+                <MenuItem Header="Malla alámbrica" IsCheckable="True" IsChecked="{Binding IsChecked, ElementName=WireframeToggle}"/>
+            </MenuItem>
+            <MenuItem Header="_Escaneo" IsEnabled="False"/>
+            <MenuItem Header="_Modelado">
+                <MenuItem Header="Aplicar transformación del inspector" Command="{Binding ApplyPoseCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_Diseño" IsEnabled="False"/>
+            <MenuItem Header="_Grabado" IsEnabled="False"/>
+            <MenuItem Header="_Herramientas">
+                <MenuItem Header="Abrir carpeta de diagnóstico" Click="OnOpenLogs"/>
+            </MenuItem>
+            <MenuItem Header="_Configuración" IsEnabled="False"/>
+        </Menu>
+
+        <Border Grid.Row="2" Background="{StaticResource ChromeBrush}" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,1">
+            <DockPanel Margin="12,0" LastChildFill="True">
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                    <ui:Button Content="Encuadrar" Click="OnFit" Margin="0,0,8,0"/>
+                    <ToggleButton x:Name="WireframeToggle" Content="Alámbrica" Checked="OnWireframe" Unchecked="OnWireframe"
+                                  Padding="10,5" Margin="0,0,8,0"/>
+                    <ui:Button Content="Perspectiva" Click="OnPerspective" Margin="0,0,8,0"/>
+                    <ui:Button Content="Ortográfica" Click="OnOrthographic"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <ui:Button Content="Importar STL" Background="{StaticResource GreenBrush}" Foreground="#15231D"
+                               Command="{Binding ImportCommand}" Margin="0,0,8,0">
+                        <ui:Button.Icon><ui:SymbolIcon Symbol="Add24"/></ui:Button.Icon>
+                    </ui:Button>
+                    <ComboBox SelectedIndex="{Binding UnitIndex}" ToolTip="Unidades de origen del próximo STL"
+                              AutomationProperties.Name="Unidades de importación STL"
+                              MinWidth="72" Margin="0,0,14,0" VerticalAlignment="Center">
+                        <ComboBoxItem Content="mm"/>
+                        <ComboBoxItem Content="cm"/>
+                        <ComboBoxItem Content="m"/>
+                        <ComboBoxItem Content="in"/>
+                    </ComboBox>
+                    <ui:Button Content="Abrir" Command="{Binding OpenCommand}" Margin="0,0,8,0"/>
+                    <ui:Button Content="Guardar" Command="{Binding SaveCommand}"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="235" MinWidth="180"/>
+                <ColumnDefinition Width="4"/>
+                <ColumnDefinition Width="*" MinWidth="300"/>
+                <ColumnDefinition Width="4"/>
+                <ColumnDefinition Width="280" MinWidth="220"/>
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Background="{StaticResource PanelBrush}" Padding="14">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top">
+                        <TextBlock Text="EXPLORADOR DEL PROYECTO" Style="{StaticResource PanelLabel}"/>
+                        <TextBlock Text="{Binding DocumentTitle}" FontWeight="SemiBold" FontSize="17" Margin="0,12,0,18"
+                                   TextTrimming="CharacterEllipsis" ToolTip="{Binding DocumentTitle}"/>
+                        <TextBlock Text="Mallas importadas" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,8"/>
+                    </StackPanel>
+                    <TextBlock DockPanel.Dock="Bottom" Text="Unidad del proyecto · mm" Foreground="{StaticResource MutedBrush}"
+                               Margin="0,8,0,0"/>
+                    <ListBox ItemsSource="{Binding Models}" SelectedItem="{Binding Selected, Mode=TwoWay}" Background="Transparent"
+                             BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             AutomationProperties.Name="Mallas del proyecto">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="AutomationProperties.Name" Value="{Binding Name}"/>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel ToolTip="{Binding Name}">
+                                    <ui:SymbolIcon DockPanel.Dock="Left" Symbol="Cube24" Foreground="{StaticResource GreenBrush}"
+                                                   Margin="0,0,8,0" FontSize="15"/>
+                                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+            <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch" Background="{StaticResource DividerBrush}"/>
+            <Grid Grid.Column="2">
+                <hx:Viewport3DX x:Name="Viewport" BackgroundColor="#171A21" ModelUpDirection="0,0,1"
+                    ShowCoordinateSystem="True" ShowViewCube="True" IsHitTestVisible="True"
+                    EnableMouseButtonHitTest="False" PreviewMouseLeftButtonDown="OnPick">
+                    <hx:AmbientLight3D Color="#606978"/>
+                    <hx:DirectionalLight3D Direction="1,-2,-3" Color="#FFFFFF"/>
+                    <hx:DirectionalLight3D Direction="-2,1,-1" Color="#7481A0"/>
+                    <hx:LineGeometryModel3D x:Name="GridLines" Color="#3D4755" Thickness="0.7" IsHitTestVisible="False"/>
+                    <hx:LineGeometryModel3D x:Name="AxisX" Color="#E7828C" Thickness="1.5" IsHitTestVisible="False"/>
+                    <hx:LineGeometryModel3D x:Name="AxisY" Color="#8CE1B7" Thickness="1.5" IsHitTestVisible="False"/>
+                    <hx:LineGeometryModel3D x:Name="AxisZ" Color="#AB99F5" Thickness="1.5" IsHitTestVisible="False"/>
+                    <hx:GroupModel3D x:Name="Scene"/>
+                </hx:Viewport3DX>
+                <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12" Padding="10,6" IsHitTestVisible="False"
+                        Background="{StaticResource ChromeBrush}" CornerRadius="3">
+                    <TextBlock x:Name="ProjectionLabel" Text="PERSPECTIVA" Style="{StaticResource PanelLabel}"/>
+                </Border>
+                <Border HorizontalAlignment="Center" VerticalAlignment="Center" Padding="22,16" IsHitTestVisible="False"
+                        x:Name="EmptyScene" Background="{StaticResource PanelBrush}" CornerRadius="5">
+                    <StackPanel>
+                        <TextBlock Text="Espacio de trabajo 3D" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Elige las unidades e importa un STL." Margin="0,6,0,0" Foreground="{StaticResource MutedBrush}"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+            <GridSplitter Grid.Column="3" Width="4" HorizontalAlignment="Stretch" Background="{StaticResource DividerBrush}"/>
+            <Border Grid.Column="4" Background="{StaticResource PanelBrush}" Padding="15">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="INSPECTOR" Style="{StaticResource PanelLabel}" Margin="0,0,0,12"/>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <Grid>
+                            <TextBlock Text="Selecciona una malla para ver sus propiedades." Foreground="{StaticResource MutedBrush}"
+                                       TextWrapping="Wrap" x:Name="EmptyInspector"/>
+                            <StackPanel x:Name="Inspector" Visibility="Collapsed">
+                                <TextBlock Text="{Binding Selected.Name}" FontSize="17" FontWeight="SemiBold"
+                                           Style="{StaticResource PanelText}"/>
+                                <TextBlock Text="Dimensiones locales (mm)" Style="{StaticResource InspectorLabel}"/>
+                                <TextBlock Text="{Binding Selected.Dimensions}" Style="{StaticResource PanelText}"/>
+                                <TextBlock Text="Límites locales (mm)" Style="{StaticResource InspectorLabel}"/>
+                                <TextBlock Text="{Binding Selected.Bounds}" Style="{StaticResource PanelText}"/>
+                                <TextBlock Text="Centroide superficial (mm)" Style="{StaticResource InspectorLabel}"/>
+                                <TextBlock Text="{Binding Selected.Centroid}" Style="{StaticResource PanelText}"/>
+                                <TextBlock Text="{Binding Selected.Counts}" Style="{StaticResource PanelText}" Margin="0,10,0,16"/>
+                                <Separator/>
+                                <TextBlock Text="TRANSFORMACIÓN" Style="{StaticResource PanelLabel}" Margin="0,10,0,8"/>
+                                <TextBlock Text="Traslación X / Y / Z (mm)" Style="{StaticResource PanelText}" Margin="0,0,0,6"/>
+                                <UniformGrid Columns="3">
+                                    <TextBox Text="{Binding X, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,4,0"
+                                             AutomationProperties.Name="Traslación X"/>
+                                    <TextBox Text="{Binding Y, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,4,0"
+                                             AutomationProperties.Name="Traslación Y"/>
+                                    <TextBox Text="{Binding Z, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Traslación Z"/>
+                                </UniformGrid>
+                                <TextBlock Text="Giro Z (°)" Style="{StaticResource InspectorLabel}"/>
+                                <TextBox Text="{Binding Rotation, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Giro Z"/>
+                                <TextBlock Text="Escala uniforme" Style="{StaticResource InspectorLabel}"/>
+                                <TextBox Text="{Binding Scale, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Escala uniforme"/>
+                                <ui:Button Content="Aplicar" Command="{Binding ApplyPoseCommand}" Margin="0,12,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+        <Border Grid.Row="4" Background="{StaticResource ChromeBrush}" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,1,0,0">
+            <DockPanel LastChildFill="True" Margin="14,0">
+                <TextBlock DockPanel.Dock="Right" Text="●  SIN CONEXIÓN A HARDWARE" Foreground="{StaticResource GreenBrush}"
+                           FontSize="11" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                <TextBlock DockPanel.Dock="Right" Text="Órbita: botón derecho · Pan: Mayús + botón derecho · Zoom: rueda"
+                           Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" FontSize="11" Margin="12,0,0,0"/>
+                <ui:Button DockPanel.Dock="Right" Content="Cancelar" Command="{Binding CancelCommand}" VerticalAlignment="Center"
+                           Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}"/>
+                <ProgressBar DockPanel.Dock="Right" Width="56" Height="4" Margin="8,0" VerticalAlignment="Center"
+                             IsIndeterminate="{Binding IsBusy}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}"/>
+                <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip="{Binding Status}"/>
+            </DockPanel>
+        </Border>
+    </Grid>
+</ui:FluentWindow>

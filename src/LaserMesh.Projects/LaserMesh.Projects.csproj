@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../LaserMesh.Geometry/LaserMesh.Geometry.csproj" />
+  </ItemGroup>
+</Project>

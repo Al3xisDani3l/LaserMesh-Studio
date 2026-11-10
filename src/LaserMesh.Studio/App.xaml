@@ -1,0 +1,27 @@
+<Application x:Class="LaserMesh.Studio.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             ShutdownMode="OnMainWindowClose">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ui:ThemesDictionary Theme="Dark"/>
+                <ui:ControlsDictionary/>
+            </ResourceDictionary.MergedDictionaries>
+            <SolidColorBrush x:Key="BaseBrush" Color="#14161B"/>
+            <SolidColorBrush x:Key="PanelBrush" Color="#1C1F27"/>
+            <SolidColorBrush x:Key="ChromeBrush" Color="#232631"/>
+            <SolidColorBrush x:Key="DividerBrush" Color="#343846"/>
+            <SolidColorBrush x:Key="TextBrush" Color="#EFF2F7"/>
+            <SolidColorBrush x:Key="MutedBrush" Color="#B0BAC9"/>
+            <SolidColorBrush x:Key="GreenBrush" Color="#8CE1B7"/>
+            <SolidColorBrush x:Key="PurpleBrush" Color="#C5B2FF"/>
+            <Style x:Key="PanelLabel" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{StaticResource PurpleBrush}"/>
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

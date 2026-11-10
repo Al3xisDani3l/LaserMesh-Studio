@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Update="pyrograph-vectors.json" CopyToOutputDirectory="PreserveNewest" />
+    <ProjectReference Include="../../src/LaserMesh.Geometry/LaserMesh.Geometry.csproj" />
+    <ProjectReference Include="../../src/LaserMesh.Projects/LaserMesh.Projects.csproj" />
+    <ProjectReference Include="../../src/LaserMesh.Hardware.LaserPecker/LaserMesh.Hardware.LaserPecker.csproj" />
+    <ProjectReference Include="../../src/LaserMesh.Scanning/LaserMesh.Scanning.csproj" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+  </ItemGroup>
+</Project>
+

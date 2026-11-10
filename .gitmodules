@@ -1,0 +1,3 @@
+[submodule "external/pyrograph"]
+	path = external/pyrograph
+	url = https://github.com/nerdocs/pyrograph.git
