@@ -1,5 +1,7 @@
 using System.Numerics;
+using System.Globalization;
 using HelixToolkit;
+using HelixToolkit.Maths;
 using HelixToolkit.SharpDX;
 using LaserMesh.Geometry;
 
@@ -58,5 +60,27 @@ public sealed class MeshAdapter
         var builder = new LineBuilder();
         builder.AddLine(Vector3.Zero, end);
         return builder.ToLineGeometry3D();
+    }
+
+    /// <summary>Labels signed X/Y distances on the scene grid, with program zero at its center.</summary>
+    public BillboardText3D CreateGridLabels(float spacing)
+    {
+        var labels = new BillboardText3D();
+        Add("0.0", new(spacing * 0.5f, -spacing * 0.6f, 0.001f), new(0.95f, 0.92f, 0.74f, 1));
+        for (var i = -8; i <= 8; i += 4)
+        {
+            if (i == 0)
+                continue;
+            var distance = i * spacing;
+            var text = distance.ToString("G4", CultureInfo.InvariantCulture);
+            Add($"X {text} mm", new(distance, -spacing * 0.6f, 0.001f), new(0.88f, 0.66f, 0.69f, 1));
+            Add($"Y {text} mm", new(-spacing * 0.7f, distance, 0.001f), new(0.60f, 0.81f, 0.72f, 1));
+        }
+        return labels;
+
+        void Add(string text, Vector3 position, Color4 color)
+        {
+            labels.TextInfo.Add(new HelixToolkit.SharpDX.TextInfo(text, position) { Foreground = color, Scale = 0.72f });
+        }
     }
 }

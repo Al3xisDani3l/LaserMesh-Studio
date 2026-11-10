@@ -85,6 +85,30 @@ public sealed class EngravingTests
         Assert.Throws<ArgumentOutOfRangeException>(() => new EngravingField(double.NaN));
     }
 
+    [Fact]
+    public void FieldReferenceSectionClipsAtTheBaseAndLens()
+    {
+        var field = new EngravingField(110);
+        Assert.Equal(100, field.WidthAt(-20));
+        Assert.Equal(50, field.WidthAt(55));
+        Assert.Equal(0, field.WidthAt(120));
+    }
+
+    [Fact]
+    public void SurfacePlacementRotatesInXYAndProjectsOntoTheFacePlane()
+    {
+        var origin = new Vector3(14, -8, 35);
+        var normal = Vector3.Normalize(new Vector3(0, -1, 1));
+        var placement = SurfaceProjection.Create(origin, normal, 90);
+        Assert.Equal(origin, Vector3.Transform(Vector3.Zero, placement));
+
+        var onPlane = Vector3.Transform(new Vector3(10, 0, 0), placement);
+        Assert.InRange(Vector3.Distance(new Vector3(14, 2, 45), onPlane), 0, 0.0001f);
+        var raised = Vector3.Transform(new Vector3(10, 0, 4), placement);
+        Assert.Equal(4, raised.Z - onPlane.Z, 4);
+        Assert.Throws<ArgumentException>(() => SurfaceProjection.Create(origin, Vector3.UnitX, 0));
+    }
+
     private Toolpath Parse(string program)
     {
         using var reader = new StringReader(program);

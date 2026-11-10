@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using HelixToolkit.Maths;
 using HelixToolkit.SharpDX;
@@ -28,6 +27,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     private static readonly Vector3D IsometricDirection = new(-1, 1, -0.8);
     private bool allowClose;
     private bool closing;
+    private float gridSpacing;
 
     internal MainWindow(StudioViewModel viewModel, MeshAdapter meshes)
     {
@@ -74,6 +74,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         UpdateEmptyScene();
         SyncSelection();
         ApplyWireframe();
+        UpdateSurfaceReference();
         if (fit)
             FitScene();
     }
@@ -103,12 +104,17 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     }
 
     private void OnPick(object sender, MouseButtonEventArgs e)
-        => viewModel.Selected = Pick(e.GetPosition(Viewport));
-
-    private SceneItem? Pick(Point point)
     {
-        var hit = Viewport.FindHits(point)?
-            .FirstOrDefault(x => x.ModelHit is MeshGeometryModel3D model && visuals.ContainsValue(model));
+        var item = Pick(e.GetPosition(Viewport), out var hit);
+        viewModel.Selected = item;
+        if (choosingFace && item is not null && hit is not null)
+            SelectHitFace(item, hit);
+    }
+
+    private SceneItem? Pick(Point point, out HitTestResult? hit)
+    {
+        hit = Viewport.FindHits(point)?
+            .FirstOrDefault(x => x.IsValid && x.ModelHit is MeshGeometryModel3D model && visuals.ContainsValue(model));
         var visual = hit?.ModelHit as MeshGeometryModel3D;
         return visual is null ? null
             : viewModel.Models.FirstOrDefault(x => visuals.GetValueOrDefault(x.Model.Id) == visual);
@@ -169,7 +175,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
                 var local = new Rect3D(min.X, min.Y, min.Z, dimensions.X, dimensions.Y, dimensions.Z);
                 bounds.Union(Transform(item.Model.Pose).TransformBounds(local));
             }
-            bounds.Union(toolpathBounds);
+            if (!toolpathBounds.IsEmpty)
+                bounds.Union(pathPlacement.TransformBounds(toolpathBounds));
         }
         if (bounds.IsEmpty && viewModel.ShowField)
         {
@@ -213,7 +220,11 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
     private void UpdateGrid(float spacing)
     {
+        if (spacing == gridSpacing)
+            return;
+        gridSpacing = spacing;
         GridLines.Geometry = meshes.CreateGrid(spacing);
+        GridLabels.Geometry = meshes.CreateGridLabels(spacing);
         AxisX.Geometry = meshes.CreateAxis(Vector3.UnitX * spacing * 4);
         AxisY.Geometry = meshes.CreateAxis(Vector3.UnitY * spacing * 4);
         AxisZ.Geometry = meshes.CreateAxis(Vector3.UnitZ * spacing * 4);

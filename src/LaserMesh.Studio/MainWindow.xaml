@@ -71,6 +71,8 @@
                           IsEnabled="{Binding HasToolpath}"/>
                 <MenuItem Header="Quitar trayectoria" Command="{Binding RemoveToolpathCommand}" IsEnabled="{Binding HasToolpath}"/>
                 <MenuItem Header="Encuadrar campo de grabado" Click="OnFitField" IsEnabled="{Binding ShowField}"/>
+                <MenuItem Header="Elegir cara de grabado" Click="OnSelectFace"/>
+                <MenuItem Header="Usar cara más alta de la pieza" Click="OnHighestFace"/>
             </MenuItem>
             <MenuItem Header="_Herramientas">
                 <MenuItem Header="Abrir carpeta de diagnóstico" Click="OnOpenLogs"/>
@@ -166,12 +168,18 @@
                     <hx:LineGeometryModel3D x:Name="AxisX" Color="#E7828C" Thickness="1.5" IsHitTestVisible="False"/>
                     <hx:LineGeometryModel3D x:Name="AxisY" Color="#8CE1B7" Thickness="1.5" IsHitTestVisible="False"/>
                     <hx:LineGeometryModel3D x:Name="AxisZ" Color="#AB99F5" Thickness="1.5" IsHitTestVisible="False"/>
+                    <hx:BillboardTextModel3D x:Name="GridLabels" FixedSize="True" IsHitTestVisible="False"/>
                     <hx:GroupModel3D x:Name="Scene"/>
                     <hx:MeshGeometryModel3D x:Name="FieldSides" IsTransparent="True" CullMode="None" IsHitTestVisible="False"/>
+                    <hx:MeshGeometryModel3D x:Name="FieldBelow" IsTransparent="True" CullMode="None" IsHitTestVisible="False"/>
                     <hx:LineGeometryModel3D x:Name="FieldOutline" Color="#668779B5" Thickness="1" IsHitTestVisible="False"/>
-                    <hx:LineGeometryModel3D x:Name="TravelPath" Color="#72859B" Thickness="1.2" IsHitTestVisible="False"/>
-                    <hx:LineGeometryModel3D x:Name="BurnPath" Color="#FFC274" Thickness="2" IsHitTestVisible="False"/>
-                    <hx:LineGeometryModel3D x:Name="ToolMarker" Color="#FFFFFF" Thickness="2.5" IsHitTestVisible="False"/>
+                    <hx:LineGeometryModel3D x:Name="FieldSection" Color="#DCC1F3" Thickness="1.1" IsHitTestVisible="False"/>
+                    <hx:GroupModel3D x:Name="PlacedToolpath">
+                        <hx:LineGeometryModel3D x:Name="TravelPath" Color="#72859B" Thickness="1.2" IsHitTestVisible="False"/>
+                        <hx:LineGeometryModel3D x:Name="BurnPath" Color="#FFC274" Thickness="2" IsHitTestVisible="False"/>
+                        <hx:LineGeometryModel3D x:Name="ToolMarker" Color="#FFFFFF" Thickness="2.5" IsHitTestVisible="False"/>
+                        <hx:LineGeometryModel3D x:Name="AlignmentGuide" Color="#A9FFE6" Thickness="1.5" IsHitTestVisible="False"/>
+                    </hx:GroupModel3D>
                 </hx:Viewport3DX>
                 <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12" Padding="10,6" IsHitTestVisible="False"
                         Background="{StaticResource ChromeBrush}" CornerRadius="3">
@@ -240,12 +248,24 @@
                              AutomationProperties.Name="Nombre Bluetooth de LaserPecker"/>
                     <ui:Button Content="Consultar BLE" Command="{Binding ProbeBluetoothCommand}"/>
                 </WrapPanel>
+                <WrapPanel Margin="0,5,0,0">
+                    <ui:Button x:Name="SelectFaceButton" Content="Elegir cara" Click="OnSelectFace" Margin="0,0,6,0"/>
+                    <ui:Button Content="Cara más alta" Click="OnHighestFace" Margin="0,0,6,0"/>
+                    <ui:Button x:Name="ClearFaceButton" Content="Quitar referencia" Click="OnClearFace" IsEnabled="False" Margin="0,0,10,0"/>
+                    <TextBlock x:Name="FaceSummary" Text="Origen XY (0.0, 0.0) · Z 0" Foreground="{StaticResource MutedBrush}"
+                               VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <CheckBox x:Name="TrackPose" Content="Seguir pieza" IsChecked="True" Checked="OnTrackPose" Unchecked="OnTrackPose"
+                              VerticalAlignment="Center"/>
+                </WrapPanel>
                 <DockPanel Margin="0,6,0,0">
                     <TextBlock DockPanel.Dock="Left" Text="G-CODE · SIMULACIÓN" Style="{StaticResource PanelLabel}"
                                VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <ui:Button DockPanel.Dock="Left" Content="Abrir" Command="{Binding OpenToolpathCommand}" Margin="0,0,6,0"/>
                     <ui:Button DockPanel.Dock="Left" x:Name="PlayButton" Content="Reproducir" Click="OnTogglePlayback"
                                IsEnabled="{Binding HasToolpath}" Margin="0,0,6,0"/>
+                    <ui:Button DockPanel.Dock="Left" x:Name="AlignmentButton" Content="Prueba de posición"
+                               Click="OnAlignmentTest" IsEnabled="{Binding HasToolpath}" Margin="0,0,6,0"
+                               ToolTip="Reproduce la trayectoria y sus límites en el visor, sin emisión."/>
                     <TextBlock DockPanel.Dock="Right" Text="{Binding ToolpathSummary}" Foreground="{StaticResource MutedBrush}"
                                VerticalAlignment="Center" Margin="8,0,0,0"/>
                     <Slider x:Name="PlaybackSlider" Minimum="0" Maximum="1" IsEnabled="{Binding HasToolpath}"

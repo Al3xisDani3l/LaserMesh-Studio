@@ -29,8 +29,10 @@ dotnet run --project src/LaserMesh.Studio -c Release --no-build -- --stl samples
 
 - Haz clic derecho sobre una malla para duplicarla, moverla con el inspector o quitarla de la escena. Arrastra con el botón derecho para orbitar.
 - En **LP2 · Campo**, ajusta la altura virtual y pulsa **Aplicar altura**. El área nominal es 100 × 100 mm con foco a 110 mm. Fuera de ese plano, el volumen tenue solo estima la cobertura geométrica.
+- Pulsa **Elegir cara** y haz clic en la superficie, o selecciona una pieza y pulsa **Cara más alta**. La sección de referencia se mueve con la pieza. La parte del cono que queda por debajo de esa altura se dibuja en naranja transparente.
 - Pulsa **Consultar BLE** para buscar `LaserPecker-II103592` con el adaptador de Windows, leer estado y firmware y cerrar la sesión. El nombre se puede editar.
 - Abre [el G-code de muestra](samples/cuadro-lp2-simulacion.gcode), reproduce o desplaza el marcador y distingue grabado (ámbar) de desplazamiento (gris). El menú **Grabado** exporta G-code lineal genérico. La trayectoria se conserva como archivo aparte del proyecto. Studio no envía G-code ni arranca grabados.
+- **Prueba de posición** reproduce el recorrido en pantalla y muestra sus límites y origen. Con **Seguir pieza**, la proyección se actualiza al aplicar una nueva pose. La cuadrícula usa milímetros y conserva el cero de la escena en el centro del campo.
 
 El escritorio funciona sin dispositivos. El soporte Kinect actual consiste en un cliente IPC y su contrato binario.
 

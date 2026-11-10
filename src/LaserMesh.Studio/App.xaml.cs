@@ -64,17 +64,21 @@ public partial class App : Application
             return;
         }
 
-        if (args is ["--stl", var path, var unit] && string.Equals(Path.GetExtension(path), ".stl", StringComparison.OrdinalIgnoreCase))
+        if (args is ["--stl", var path, var unit, .. var remaining]
+            && remaining is [] or ["--gcode", _]
+            && string.Equals(Path.GetExtension(path), ".stl", StringComparison.OrdinalIgnoreCase))
         {
             var factor = unit.ToLowerInvariant() switch { "mm" => 1f, "cm" => 10f, "m" => 1000f, "in" => 25.4f, _ => 0f };
             if (factor > 0)
             {
                 await studio.ImportFileAsync(Path.GetFullPath(path), factor);
+                if (studio.Models.Count > 0 && remaining is ["--gcode", var toolpath])
+                    await studio.OpenToolpathFileAsync(Path.GetFullPath(toolpath));
                 return;
             }
         }
 
-        MessageBox.Show(MainWindow, "Usa un archivo .lmeshproj, --stl archivo.stl mm|cm|m|in o --gcode archivo.gcode.",
+        MessageBox.Show(MainWindow, "Usa un archivo .lmeshproj, --stl archivo.stl mm|cm|m|in o --gcode archivo.gcode. Puedes combinar STL y G-code.",
             "Argumentos de inicio", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 

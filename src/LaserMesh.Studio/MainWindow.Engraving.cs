@@ -23,6 +23,8 @@ public partial class MainWindow
     private void InitializeEngraving()
     {
         FieldSides.Material = Material(new Color4(0.55f, 0.38f, 0.88f, 0.04f));
+        FieldBelow.Material = Material(new Color4(1f, 0.58f, 0.17f, 0.085f));
+        PlacedToolpath.Transform = pathPlacement;
         var marker = new LineBuilder();
         marker.AddLine(-Vector3.UnitX, Vector3.UnitX);
         marker.AddLine(-Vector3.UnitY, Vector3.UnitY);
@@ -49,10 +51,14 @@ public partial class MainWindow
 
     private void SyncField()
     {
-        var (sides, outline) = EngravingGeometry.CreateField(viewModel.Field);
-        FieldSides.Geometry = sides;
+        var (above, below, outline, section) = EngravingGeometry.CreateField(viewModel.Field, referenceZ);
+        FieldSides.Geometry = above;
+        FieldBelow.Geometry = below;
         FieldOutline.Geometry = outline;
+        FieldSection.Geometry = section;
         FieldSides.Visibility = FieldOutline.Visibility = viewModel.ShowField ? Visibility.Visible : Visibility.Collapsed;
+        FieldBelow.Visibility = FieldSection.Visibility = FieldSides.Visibility;
+        RefreshFaceSummary();
         UpdateEmptyScene();
         if (visuals.Count == 0 && viewModel.Toolpath is null)
             FitScene();
@@ -77,6 +83,7 @@ public partial class MainWindow
         }
         PlaybackSlider.Maximum = viewModel.Toolpath?.DurationSeconds ?? 1;
         PlaybackSlider.Value = 0;
+        SetAlignmentGuide(false);
         SyncMarker();
         UpdateEmptyScene();
     }
@@ -156,7 +163,7 @@ public partial class MainWindow
         var start = menuPress;
         menuPress = null;
         var point = e.GetPosition(Viewport);
-        if (viewModel.IsBusy || start is null || IsDrag(start.Value, point) || Pick(point) is not { } selected)
+        if (viewModel.IsBusy || start is null || IsDrag(start.Value, point) || Pick(point, out _) is not { } selected)
             return;
 
         viewModel.Selected = selected;

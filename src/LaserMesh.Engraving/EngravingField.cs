@@ -25,12 +25,15 @@ public readonly record struct EngravingField
     /// <summary>Geometric width at the work plane, with no optical performance guarantee.</summary>
     public double PlaneWidth => NominalWidth * Height / NominalHeight;
 
+    /// <summary>Returns the geometric section width at scene height Z, clipped to the field limits.</summary>
+    public double WidthAt(double z) => NominalWidth * (Height - Math.Clamp(z, 0, Height)) / NominalHeight;
+
     /// <summary>Tests the geometric envelope only, independent of focus or device limits.</summary>
     public bool Contains(Vector3 point)
     {
         if (point.Z < 0 || point.Z > Height)
             return false;
-        var halfWidth = NominalWidth * (Height - point.Z) / (2 * NominalHeight);
+        var halfWidth = WidthAt(point.Z) / 2;
         return Math.Abs(point.X) <= halfWidth && Math.Abs(point.Y) <= halfWidth;
     }
 }
