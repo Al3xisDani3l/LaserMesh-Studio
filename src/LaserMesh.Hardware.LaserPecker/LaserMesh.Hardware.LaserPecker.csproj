@@ -2,4 +2,7 @@
   <PropertyGroup>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.IO.Ports" />
+  </ItemGroup>
 </Project>

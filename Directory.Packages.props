@@ -3,6 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="System.IO.Ports" Version="10.0.8" />
     <PackageVersion Include="Clipper2" Version="2.0.0" />
     <PackageVersion Include="WPF-UI" Version="4.3.0" />
     <PackageVersion Include="HelixToolkit.Wpf.SharpDX" Version="3.1.2" />

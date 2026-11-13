@@ -4,6 +4,7 @@ Requisitos de la aplicación: Windows x64, SDK estable .NET 10 y entorno gráfic
 
 | Paquete | Versión fijada | Compatibilidad y licencia |
 | --- | --- | --- |
+| [System.IO.Ports](https://www.nuget.org/packages/System.IO.Ports/10.0.8) | 10.0.8 | Versión estable de Microsoft, activos .NET 10, MIT. Transporte USB serie; E/S síncrona confinada al worker de sesión. |
 | [WPF-UI](https://www.nuget.org/packages/WPF-UI/4.3.0) | 4.3.0 | Activos WPF para .NET 10. MIT. |
 | [HelixToolkit.Wpf.SharpDX](https://www.nuget.org/packages/HelixToolkit.Wpf.SharpDX/3.1.2) | 3.1.2 | Activos WPF para .NET 8 compatibles con .NET 10. MIT. |
 | [CommunityToolkit.Mvvm](https://www.nuget.org/packages/CommunityToolkit.Mvvm/8.4.2) | 8.4.2 | Activos .NET 8 y .NET Standard. MIT. |

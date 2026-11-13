@@ -259,6 +259,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         closing = true;
         try
         {
+            await StopLiveAsync();
             if (await viewModel.ConfirmDiscardAsync())
             {
                 allowClose = true;

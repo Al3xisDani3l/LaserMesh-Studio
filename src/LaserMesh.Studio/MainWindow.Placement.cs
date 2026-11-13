@@ -22,7 +22,9 @@ public partial class MainWindow
 
     private void OnPlacementModeChanged(object sender, SelectionChangedEventArgs e) => RefreshPlacement();
 
-    private async void RefreshPlacement()
+    private async void RefreshPlacement() => await RefreshPlacementAsync();
+
+    private async Task RefreshPlacementAsync()
     {
         if (!placementEnabled)
             return;
@@ -36,6 +38,7 @@ public partial class MainWindow
         if (viewModel.Selected is not { } selected)
         {
             PlacementSummary.Text = "Selecciona una malla para generar la guía.";
+            await StopLiveAsync();
             return;
         }
 
@@ -44,7 +47,7 @@ public partial class MainWindow
         var pose = model.Pose;
         var matrix = Matrix3x2.CreateScale((float)pose.Scale)
             * Matrix3x2.CreateRotation((float)(pose.Rotation * Math.PI / 180))
-            * Matrix3x2.CreateTranslation((float)pose.X, (float)pose.Y);
+            * Matrix3x2.CreateTranslation((float)pose.X + previewOffset.X, (float)pose.Y + previewOffset.Y);
         using var work = new CancellationTokenSource();
         placementWork = work;
         PlacementSummary.Text = $"Calculando guía · {model.Name}…";
@@ -82,12 +85,16 @@ public partial class MainWindow
             var size = guide.Maximum - guide.Minimum;
             PlacementSummary.Text = $"{model.Name} · {size.X:0.###} × {size.Y:0.###} mm · "
                 + $"X {guide.Minimum.X:0.###} a {guide.Maximum.X:0.###} · Y {guide.Minimum.Y:0.###} a {guide.Maximum.Y:0.###} · Z {z:0.###}";
+            QueueLiveGuide(guide);
         }
         catch (OperationCanceledException) when (work.IsCancellationRequested) { }
         catch (InvalidDataException ex)
         {
             if (placementWork == work)
+            {
                 PlacementSummary.Text = ex.Message;
+                await StopLiveAsync();
+            }
         }
         finally
         {

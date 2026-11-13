@@ -143,12 +143,22 @@
                         <ui:Button Content="Generar guía" Click="OnGeneratePlacement" Margin="0,0,6,0"/>
                         <ui:Button x:Name="ExportPlacement" Content="Exportar guía G-code" IsEnabled="False"
                                    Click="OnExportPlacement" Margin="0,0,6,0"/>
-                        <ui:Button Content="Previsualizar en LP2" IsEnabled="False" Margin="0,0,6,0"/>
-                        <ui:Button Content="Detener proyección" IsEnabled="False" Margin="0,0,6,0"/>
+                        <TextBox x:Name="UsbPort" Text="COM8" Width="70" Margin="0,0,6,0" AutomationProperties.Name="Puerto USB"/>
+                        <ui:Button x:Name="LivePreview" Content="Previsualizar en vivo · USB" Click="OnLivePreview" Margin="0,0,6,0"/>
+                        <ui:Button x:Name="StopPreview" Content="Detener proyección" Click="OnStopPreview" IsEnabled="False" Margin="0,0,6,0"/>
                     </WrapPanel>
                     <TextBlock x:Name="PlacementSummary" Text="Selecciona una malla y genera su guía."
                                Style="{StaticResource PanelText}" Margin="0,4,0,0"/>
-                    <TextBlock Text="Proyección física pendiente de validar ambos modos en firmware 3.16."
+                    <WrapPanel Margin="0,4,0,0">
+                        <TextBlock Text="Mover encuadre · paso 1 mm" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <ui:Button Content="X −" Tag="-1,0" Click="OnMovePreview" Margin="0,0,4,0"/>
+                        <ui:Button Content="X +" Tag="1,0" Click="OnMovePreview" Margin="0,0,4,0"/>
+                        <ui:Button Content="Y −" Tag="0,-1" Click="OnMovePreview" Margin="0,0,4,0"/>
+                        <ui:Button Content="Y +" Tag="0,1" Click="OnMovePreview" Margin="0,0,4,0"/>
+                        <ui:Button Content="Restablecer desplazamiento" Tag="0,0" Click="OnMovePreview" Margin="0,0,8,0"/>
+                        <TextBlock x:Name="PreviewOffset" Text="ΔX 0 · ΔY 0 mm" VerticalAlignment="Center"/>
+                    </WrapPanel>
+                    <TextBlock x:Name="UsbPreviewStatus" Text="Sin emisión. Inicia en vivo para seguir cambios de pose y encuadre · LP2 3.16 · nivel 1 · máximo 60 s · campo USB 100 × 100 mm."
                                Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,2,0,0"/>
                 <DockPanel Margin="0,6,0,0">
                     <TextBlock DockPanel.Dock="Left" Text="G-CODE · SIMULACIÓN" Style="{StaticResource PanelLabel}"
@@ -304,6 +314,8 @@
         </Grid>
         <Border Grid.Row="4" Background="{StaticResource ChromeBrush}" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,1,0,0">
             <DockPanel LastChildFill="True" Margin="14,0">
+                <ui:Button x:Name="StatusStopPreview" DockPanel.Dock="Left" Content="Detener LP2" Click="OnStopPreview"
+                           Visibility="Collapsed" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <TextBlock DockPanel.Dock="Right" Text="{Binding BluetoothStatus}" Foreground="{StaticResource GreenBrush}"
                            FontSize="11" VerticalAlignment="Center" Margin="12,0,0,0"/>
                 <TextBlock DockPanel.Dock="Right" Text="Órbita: botón derecho · Pan: Mayús + botón derecho · Zoom: rueda"
