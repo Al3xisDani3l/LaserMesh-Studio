@@ -9,14 +9,14 @@
                 <ui:ThemesDictionary Theme="Dark"/>
                 <ui:ControlsDictionary/>
             </ResourceDictionary.MergedDictionaries>
-            <SolidColorBrush x:Key="BaseBrush" Color="#14161B"/>
-            <SolidColorBrush x:Key="PanelBrush" Color="#1C1F27"/>
-            <SolidColorBrush x:Key="ChromeBrush" Color="#232631"/>
-            <SolidColorBrush x:Key="DividerBrush" Color="#343846"/>
-            <SolidColorBrush x:Key="TextBrush" Color="#EFF2F7"/>
-            <SolidColorBrush x:Key="MutedBrush" Color="#B0BAC9"/>
-            <SolidColorBrush x:Key="GreenBrush" Color="#8CE1B7"/>
-            <SolidColorBrush x:Key="PurpleBrush" Color="#C5B2FF"/>
+            <SolidColorBrush x:Key="BaseBrush" Color="#101216"/>
+            <SolidColorBrush x:Key="PanelBrush" Color="#1B1E24"/>
+            <SolidColorBrush x:Key="ChromeBrush" Color="#242933"/>
+            <SolidColorBrush x:Key="DividerBrush" Color="#343B47"/>
+            <SolidColorBrush x:Key="TextBrush" Color="#E7EAF0"/>
+            <SolidColorBrush x:Key="MutedBrush" Color="#AAB3C0"/>
+            <SolidColorBrush x:Key="GreenBrush" Color="#FDD800"/>
+            <SolidColorBrush x:Key="PurpleBrush" Color="#AAB3C0"/>
             <Style x:Key="PanelLabel" TargetType="TextBlock">
                 <Setter Property="FontSize" Value="12"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>

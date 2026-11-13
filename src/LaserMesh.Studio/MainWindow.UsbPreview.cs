@@ -56,6 +56,7 @@ public partial class MainWindow
                 new Progress<string>(message =>
                 {
                     UsbPreviewStatus.Text = message;
+                    viewModel.ReportDeviceStatus(message);
                     Log.Information("LP2 preview: {State}", message);
                 }), liveCancellation.Token);
             await liveTask;
@@ -63,7 +64,7 @@ public partial class MainWindow
         catch (OperationCanceledException) { }
         catch (Exception ex) when (ex is IOException or TimeoutException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
         {
-            UsbPreviewStatus.Text = ex.Message;
+            UsbPreviewStatus.Text = ex.Message; viewModel.ReportDeviceStatus(ex.Message);
             Log.Error(ex, "USB preview ended with an error");
         }
         finally
@@ -83,7 +84,7 @@ public partial class MainWindow
 
     private async void QueueLiveGuide(PlacementGuide guide)
     {
-        if (liveUpdates is not { } channel || liveCancellation is not { IsCancellationRequested: false })
+        if (gestureStart is not null || viewModel.IsEditingNumbers || liveUpdates is not { } channel || liveCancellation is not { IsCancellationRequested: false })
             return;
         liveDebounce?.Cancel();
         using var debounce = new CancellationTokenSource();
@@ -138,5 +139,13 @@ public partial class MainWindow
                 if (ex is not OperationCanceledException) UsbPreviewStatus.Text = ex.Message;
             }
         }
+        await viewModel.StopRasterAsync();
+    }
+
+    private void OnPhysicalEngravingChanged(bool active)
+    {
+        StatusStopPreview.Visibility = active || liveTask is not null ? Visibility.Visible : Visibility.Collapsed;
+        StopPreview.IsEnabled = active || liveTask is not null;
+        LivePreview.IsEnabled = !active && liveTask is null && !usbPreview.UnknownState;
     }
 }

@@ -50,7 +50,7 @@ public sealed class UsbPreviewSession
                         Ack(1);
                         link.Send(file[..64]);
                         Pause(100, cancellationToken);
-                        link.Send(file[64..]);
+                        link.Send(file[64..], cancellationToken);
                         Ack(2);
                         // USB storage ACK completes transfer. Android FinishFile is not used here.
                     }

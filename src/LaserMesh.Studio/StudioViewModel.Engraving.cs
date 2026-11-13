@@ -35,6 +35,8 @@ internal sealed partial class StudioViewModel
     [ObservableProperty] public partial bool HasToolpath { get; private set; }
     [ObservableProperty] public partial string ToolpathSummary { get; private set; } = "Sin trayectoria";
 
+    partial void OnFieldHeightChanged(string value) => ApplyField();
+
     partial void OnShowFieldChanged(bool value) => FieldChanged?.Invoke();
 
     partial void OnBluetoothNameChanged(string value) => BluetoothStatus = "BLE sin consultar · simulación";
@@ -153,42 +155,14 @@ internal sealed partial class StudioViewModel
     }
 
     [RelayCommand]
-    private void Duplicate()
-    {
-        if (IsBusy || Selected is not { } selected)
-            return;
-        var mesh = selected.Model.Mesh;
-        if (Models.Count >= ProjectStore.MaxModels
-            || Models.Sum(item => item.Model.Mesh.TriangleCount) + mesh.TriangleCount > ProjectStore.MaxTriangles)
-        {
-            Status = "Se alcanzó el límite de geometría del proyecto.";
-            return;
-        }
-
-        const string suffix = " (copia)";
-        var name = selected.Name[..Math.Min(selected.Name.Length, 255 - suffix.Length)] + suffix;
-        var pose = selected.Model.Pose;
-        var displacement = Math.Max(5, mesh.Dimensions.Length() * pose.Scale * 1.05);
-        var moved = pose with { X = pose.X + displacement };
-        if (!moved.IsValid())
-            moved = pose with { X = pose.X - displacement };
-        var copy = selected with
-        {
-            Model = new ProjectModel(Guid.NewGuid(), name, mesh, moved.IsValid() ? moved : pose)
-        };
-        Models = [.. Models, copy];
-        Selected = copy;
-        UpdateDocument(projectPath, true);
-        SceneChanged?.Invoke(true);
-        Status = $"Duplicado · {copy.Name}";
-    }
+    private void Duplicate() => DuplicateSelection();
 
     [RelayCommand]
     private void Move()
     {
         if (IsBusy || Selected is null)
             return;
-        Status = "Edita X, Y o Z en el inspector y pulsa Aplicar.";
+        Status = "Arrastra la selección en XY o edita sus valores en vivo.";
         MoveRequested?.Invoke();
     }
 }

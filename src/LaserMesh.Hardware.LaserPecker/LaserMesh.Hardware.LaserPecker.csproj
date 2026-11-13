@@ -3,6 +3,8 @@
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../LaserMesh.Imaging/LaserMesh.Imaging.csproj" />
+    <ProjectReference Include="../LaserMesh.Calibration/LaserMesh.Calibration.csproj" />
     <PackageReference Include="System.IO.Ports" />
   </ItemGroup>
 </Project>

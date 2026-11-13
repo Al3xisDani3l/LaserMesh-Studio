@@ -44,6 +44,7 @@ El escritorio funciona sin dispositivos. El soporte Kinect actual consiste en un
 
 ## Documentación
 
+- [Propuesta de mejoras visuales y de usabilidad](docs/UI_UX_IMPROVEMENT_PLAN.md): diagnóstico, interacciones, paleta oscura, entregas y criterios de aceptación.
 - [Arquitectura](docs/ARCHITECTURE.md) y [desarrollo](docs/DEVELOPMENT.md)
 - [Pruebas](docs/TESTING.md) y [hoja de ruta](docs/ROADMAP.md)
 - [Hardware](docs/HARDWARE.md) e [integración Kinect](docs/KINECT_INTEGRATION.md)

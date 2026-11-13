@@ -8,6 +8,9 @@ public interface IPreviewConnection : IDisposable
 {
     /// <summary>Writes one frame or raw file fragment.</summary>
     void Send(byte[] bytes);
+    /// <summary>Writes bounded fragments while observing cancellation; implementations may override for large files.</summary>
+    void Send(byte[] bytes, CancellationToken cancellationToken)
+    { cancellationToken.ThrowIfCancellationRequested(); Send(bytes); }
     /// <summary>Receives a matching frame within a bounded time, observing cancellation.</summary>
     LaserPeckerFrame Receive(Func<LaserPeckerFrame, bool> matches, CancellationToken cancellationToken);
 }
@@ -32,7 +35,17 @@ public sealed class UsbPreviewConnection : IPreviewConnection
     }
 
     /// <inheritdoc/>
-    public void Send(byte[] bytes) => port.Write(bytes, 0, bytes.Length);
+    public void Send(byte[] bytes) => Send(bytes, CancellationToken.None);
+
+    /// <inheritdoc/>
+    public void Send(byte[] bytes, CancellationToken cancellationToken)
+    {
+        for (var offset = 0; offset < bytes.Length; offset += 1024)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            port.Write(bytes, offset, Math.Min(1024, bytes.Length - offset));
+        }
+    }
 
     /// <inheritdoc/>
     public LaserPeckerFrame Receive(Func<LaserPeckerFrame, bool> matches, CancellationToken cancellationToken)

@@ -23,7 +23,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     private readonly DefaultEffectsManager effects;
     private readonly Dictionary<Guid, MeshGeometryModel3D> visuals = [];
     private readonly PhongMaterial standard = Material(new Color4(0.56f, 0.62f, 0.72f, 1));
-    private readonly PhongMaterial highlighted = Material(new Color4(0.36f, 0.83f, 0.62f, 1));
+    private readonly PhongMaterial highlighted = Material(new Color4(0.79f, 0.81f, 0.85f, 1));
     private static readonly Vector3D IsometricDirection = new(-1, 1, -0.8);
     private bool allowClose;
     private bool closing;
@@ -42,8 +42,19 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         UpdateGrid(10);
         viewModel.SceneChanged += SyncScene;
         viewModel.PropertyChanged += OnViewModelChanged;
+        viewModel.SelectionChanged += SyncEditingSelection;
+        viewModel.BeforeHistoryRestore = StopLiveAsync;
+        viewModel.DesignsChanged += SyncDesigns;
+        viewModel.PhysicalEngravingChanged += OnPhysicalEngravingChanged;
+        viewModel.PreparationSnapshot = CapturePreparation;
+        viewModel.PreparationRestored += RestorePreparation;
+        PreviewKeyDown += OnEditingKey;
+        LostMouseCapture += OnEditingCaptureLost;
         InitializeEngraving();
+        Viewport.CameraChanged += (_, _) => DrawRulers();
+        Viewport.SizeChanged += (_, _) => DrawRulers();
         Closing += OnClosing;
+        Loaded += OnRestoreLayout;
         Closed += OnClosed;
     }
 
@@ -69,23 +80,25 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             if (element.Geometry != item.Geometry)
                 element.Geometry = item.Geometry;
             element.Transform = Transform(model.Pose);
+            element.Visibility = model.Visible ? Visibility.Visible : Visibility.Hidden;
         }
 
+        SyncDesigns();
         UpdateEmptyScene();
         SyncSelection();
         ApplyWireframe();
         UpdateSurfaceReference();
+        if (gestureStart is null) RefreshPlacement();
+        SyncEditingSelection();
         if (fit)
             FitScene();
     }
 
     private static Transform3D Transform(ModelPose pose)
     {
-        var matrix = Matrix3D.Identity;
-        matrix.Scale(new(pose.Scale, pose.Scale, pose.Scale));
-        matrix.Rotate(new Quaternion(new Vector3D(0, 0, 1), pose.Rotation));
-        matrix.Translate(new(pose.X, pose.Y, pose.Z));
-        return new MatrixTransform3D(matrix);
+        var m = pose.Matrix;
+        return new MatrixTransform3D(new Matrix3D(m.M11, m.M12, m.M13, m.M14,
+            m.M21, m.M22, m.M23, m.M24, m.M31, m.M32, m.M33, m.M34, m.M41, m.M42, m.M43, m.M44));
     }
 
     private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
@@ -103,15 +116,12 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         Inspector.Visibility = selected.HasValue ? Visibility.Visible : Visibility.Collapsed;
         EmptyInspector.Visibility = selected.HasValue ? Visibility.Collapsed : Visibility.Visible;
         foreach (var (id, element) in visuals)
-            element.Material = id == selected ? highlighted : standard;
+            element.Material = viewModel.Selection.Ids.Contains(id) ? highlighted : standard;
     }
 
     private void OnPick(object sender, MouseButtonEventArgs e)
     {
-        var item = Pick(e.GetPosition(Viewport), out var hit);
-        viewModel.Selected = item;
-        if (choosingFace && item is not null && hit is not null)
-            SelectHitFace(item, hit);
+        BeginPointerEdit(e);
     }
 
     private SceneItem? Pick(Point point, out HitTestResult? hit)
@@ -193,6 +203,18 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             return;
         }
 
+        FocusBounds(bounds);
+    }
+
+    private void OnFitSelection(object sender, RoutedEventArgs e) => FitSelection();
+    private void FitSelection()
+    {
+        if (viewModel.SelectedItems.Count == 0) { FitScene(); return; }
+        var (min, max) = StudioViewModel.Bounds(viewModel.SelectedItems);
+        FocusBounds(new Rect3D(min.X, min.Y, min.Z, Math.Max(max.X - min.X, 0.01), Math.Max(max.Y - min.Y, 0.01), Math.Max(max.Z - min.Z, 0.01)));
+    }
+    private void FocusBounds(Rect3D bounds)
+    {
         var size = new Vector3D(bounds.SizeX, bounds.SizeY, bounds.SizeZ);
         var center = bounds.Location + size / 2;
         var radius = Math.Max(size.Length / 2, 1e-8);
@@ -262,6 +284,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             await StopLiveAsync();
             if (await viewModel.ConfirmDiscardAsync())
             {
+                await SaveLayoutAsync();
                 allowClose = true;
                 await Dispatcher.InvokeAsync(Close);
             }
@@ -274,10 +297,17 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
     private void OnClosed(object? sender, EventArgs e)
     {
+        designRenderWork?.Cancel(); ClearDesignVisuals();
+        viewModel.DesignsChanged -= SyncDesigns;
+        viewModel.PhysicalEngravingChanged -= OnPhysicalEngravingChanged;
         ReleasePlacement();
         ReleaseEngraving();
         viewModel.SceneChanged -= SyncScene;
         viewModel.PropertyChanged -= OnViewModelChanged;
+        viewModel.SelectionChanged -= SyncEditingSelection;
+        viewModel.BeforeHistoryRestore = null;
+        viewModel.PreparationSnapshot = null;
+        viewModel.PreparationRestored -= RestorePreparation;
         Scene.Children.Clear();
         foreach (var visual in visuals.Values)
             visual.Dispose();

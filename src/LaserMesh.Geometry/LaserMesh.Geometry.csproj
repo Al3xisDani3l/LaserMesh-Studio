@@ -1,2 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup Condition="Exists('../../native/LaserMesh.Uv/bin/LaserMesh.Uv.Native.dll')">
+    <None Include="../../native/LaserMesh.Uv/bin/LaserMesh.Uv.Native.dll" Link="LaserMesh.Uv.Native.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

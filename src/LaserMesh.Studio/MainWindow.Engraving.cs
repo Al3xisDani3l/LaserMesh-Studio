@@ -150,10 +150,11 @@ public partial class MainWindow
     }
 
     private void OnObjectMenuDown(object sender, MouseButtonEventArgs e)
-        => menuPress = Keyboard.Modifiers == ModifierKeys.None ? e.GetPosition(Viewport) : null;
+        => menuPress = Keyboard.Modifiers is ModifierKeys.None or ModifierKeys.Control ? e.GetPosition(Viewport) : null;
 
     private void OnObjectMenuMove(object sender, MouseEventArgs e)
     {
+        ContinuePointerEdit(e);
         if (menuPress is { } start && IsDrag(start, e.GetPosition(Viewport)))
             menuPress = null;
     }
@@ -163,11 +164,11 @@ public partial class MainWindow
         var start = menuPress;
         menuPress = null;
         var point = e.GetPosition(Viewport);
-        if (viewModel.IsBusy || start is null || IsDrag(start.Value, point) || Pick(point, out _) is not { } selected)
-            return;
-
-        viewModel.Selected = selected;
-        var menu = (ContextMenu)Viewport.Resources["ObjectMenu"];
+        if (viewModel.IsBusy || start is null || IsDrag(start.Value, point)) return;
+        var selected = Pick(point, out _);
+        if (selected is not null && !viewModel.Selection.Ids.Contains(selected.Model.Id))
+            viewModel.SelectHit(selected, Keyboard.Modifiers.HasFlag(ModifierKeys.Control));
+        var menu = (ContextMenu)Viewport.Resources[selected is null ? "BackgroundMenu" : "ObjectMenu"];
         menu.PlacementTarget = Viewport;
         menu.DataContext = viewModel;
         // Let Helix release the orbit gesture's mouse capture first.

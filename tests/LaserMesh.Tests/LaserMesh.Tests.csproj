@@ -4,6 +4,7 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <None Update="raster-vectors.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="pyrograph-vectors.json" CopyToOutputDirectory="PreserveNewest" />
     <ProjectReference Include="../../src/LaserMesh.Geometry/LaserMesh.Geometry.csproj" />
     <ProjectReference Include="../../src/LaserMesh.Projects/LaserMesh.Projects.csproj" />

@@ -12,9 +12,14 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: Build pinned xatlas C ABI
+        shell: cmd
+        run: native\LaserMesh.Uv\build.cmd
       - run: dotnet restore LaserMeshStudio.sln
       - run: dotnet build LaserMeshStudio.sln -c Release --no-restore
       - run: dotnet test LaserMeshStudio.sln -c Release --no-build

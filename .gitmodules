@@ -1,3 +1,6 @@
 [submodule "external/pyrograph"]
 	path = external/pyrograph
 	url = https://github.com/nerdocs/pyrograph.git
+[submodule "external/xatlas"]
+	path = external/xatlas
+	url = https://github.com/jpcy/xatlas.git

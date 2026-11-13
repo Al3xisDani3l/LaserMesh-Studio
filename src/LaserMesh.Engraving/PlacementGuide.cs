@@ -11,11 +11,15 @@ public enum PlacementMode
     Silhouette,
 
     /// <summary>Axis-aligned rectangle of maximum extents in scene XY.</summary>
-    Rectangle
+    Rectangle,
+    /// <summary>Independent exterior contours for each instance.</summary>
+    Individual,
+    /// <summary>Intersection with a horizontal scene plane.</summary>
+    Section
 }
 
 /// <summary>One or more closed exterior loops in scene XY, in millimetres.</summary>
-public sealed class PlacementGuide
+public sealed partial class PlacementGuide
 {
     private const double UnitsPerMillimetre = 1000;
     private const int MaxSegments = 100_000;

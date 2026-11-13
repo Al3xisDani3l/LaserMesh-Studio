@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../LaserMesh.Geometry/LaserMesh.Geometry.csproj" />
+    <ProjectReference Include="../LaserMesh.Projects/LaserMesh.Projects.csproj" />
+  </ItemGroup>
+</Project>

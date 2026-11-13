@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF><PlatformTarget>x64</PlatformTarget>
+    <IsPackable>false</IsPackable><GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/LaserMesh.Studio/LaserMesh.Studio.csproj" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    <None Include="../../samples/tetraedro-40x30x20.stl" Link="sample.stl" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

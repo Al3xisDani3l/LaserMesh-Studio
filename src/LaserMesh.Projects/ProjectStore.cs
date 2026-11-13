@@ -13,26 +13,35 @@ public sealed class ProjectStore(StlCodec stl)
     /// <summary>Maximum aggregate triangle count.</summary>
     public const int MaxTriangles = 2_000_000;
 
-    private const int Version = 1;
+    private const int Version = 2;
+    private static readonly JsonSerializerOptions JsonOptions = new() { IncludeFields = true };
     private const string ManifestName = "manifest.json";
-    private const int MaxManifestBytes = 256 * 1024;
+    private const int MaxManifestBytes = 2 * 1024 * 1024;
 
     /// <summary>Loads embedded models and placements on a background thread.</summary>
     public Task<IReadOnlyList<ProjectModel>> OpenAsync(string path, CancellationToken cancellationToken)
-        => Task.Run(() => Read(path, cancellationToken), cancellationToken);
+        => Task.Run(() => Read(path, cancellationToken).Models, cancellationToken);
 
     /// <summary>Saves a snapshot using a sibling temporary file and atomic rename.</summary>
     public Task SaveAsync(string path, IReadOnlyList<ProjectModel> models, CancellationToken cancellationToken)
     {
         var snapshot = models.ToArray();
-        return Task.Run(() => Write(path, snapshot, cancellationToken), cancellationToken);
+        return SaveSceneAsync(path, new SceneDocument { Models = snapshot }, cancellationToken);
     }
 
-    private IReadOnlyList<ProjectModel> Read(string path, CancellationToken token)
+    /// <summary>Loads a version-one or version-two scene with embedded images.</summary>
+    public Task<SceneDocument> OpenSceneAsync(string path, CancellationToken cancellationToken)
+        => Task.Run(() => Read(path, cancellationToken), cancellationToken);
+
+    /// <summary>Saves an entire version-two scene atomically.</summary>
+    public Task SaveSceneAsync(string path, SceneDocument document, CancellationToken cancellationToken)
+        => Task.Run(() => Write(path, document, cancellationToken), cancellationToken);
+
+    private SceneDocument Read(string path, CancellationToken token)
     {
         using var input = File.OpenRead(path);
         using var zip = new ZipArchive(input, ZipArchiveMode.Read);
-        if (zip.Entries.Count > MaxModels + 1)
+        if (zip.Entries.Count > MaxModels + 129)
             throw new InvalidDataException("Demasiados recursos en el proyecto.");
 
         var entries = new Dictionary<string, ZipArchiveEntry>(StringComparer.Ordinal);
@@ -51,8 +60,8 @@ public sealed class ProjectStore(StlCodec stl)
         if (manifestStream.ReadByte() != -1)
             throw new InvalidDataException("La longitud del manifest no coincide.");
 
-        var manifest = JsonSerializer.Deserialize<Manifest>(json);
-        if (manifest is null || manifest.Version != Version || manifest.Unit != "mm"
+        var manifest = JsonSerializer.Deserialize<Manifest>(json, JsonOptions);
+        if (manifest is null || manifest.Version is not (1 or Version) || manifest.Unit != "mm"
             || manifest.Models is null || manifest.Models.Length > MaxModels)
             throw new InvalidDataException("Formato de proyecto o versión no admitidos.");
 
@@ -77,15 +86,35 @@ public sealed class ProjectStore(StlCodec stl)
             var mesh = stl.Read(stream, entry.Length, 1, token);
             if (mesh.TriangleCount != expectedTriangles || stream.ReadByte() != -1)
                 throw new InvalidDataException("Longitud de malla inconsistente.");
-            result.Add(new(item.Id, item.Name, mesh, item.Pose));
+            result.Add(new(item.Id, item.Name, mesh, item.Pose) { Visible = item.Visible, Locked = item.Locked, GroupId = item.GroupId });
         }
 
-        return result;
+        var assets = new List<DesignAsset>();
+        long resourceBytes = 0;
+        foreach (var asset in manifest.Assets ?? [])
+        {
+            token.ThrowIfCancellationRequested();
+            if (!entries.TryGetValue($"images/{asset.Id:N}", out var entry) || entry.Length is <= 0 or > 64 * 1024 * 1024)
+                throw new InvalidDataException("Imagen embebida inválida.");
+            resourceBytes += entry.Length;
+            if (resourceBytes > 128 * 1024 * 1024) throw new InvalidDataException("Demasiados recursos de imagen.");
+            using var stream = entry.Open();
+            var content = new byte[checked((int)entry.Length)]; stream.ReadExactly(content);
+            if (stream.ReadByte() != -1) throw new InvalidDataException("Longitud de imagen inconsistente.");
+            assets.Add(new(asset.Id, asset.Name, asset.MediaType, content));
+        }
+        var document = new SceneDocument { Models = result, Assets = assets, Groups = manifest.Groups ?? [],
+            Designs = manifest.Designs ?? [], SupportZ = manifest.SupportZ, SectionZ = manifest.SectionZ,
+            Preparation = manifest.Preparation ?? new() };
+        ValidateScene(document);
+        return document;
     }
 
-    private void Write(string path, ProjectModel[] models, CancellationToken token)
+    private void Write(string path, SceneDocument document, CancellationToken token)
     {
-        var items = models.Select(x => new ModelEntry(x.Id, x.Name, x.Pose)).ToArray();
+        ValidateScene(document);
+        var models = document.Models.ToArray();
+        var items = models.Select(x => new ModelEntry(x.Id, x.Name, x.Pose, x.Visible, x.Locked, x.GroupId)).ToArray();
         if (items.Length > MaxModels || items.Any(x => !IsValid(x))
             || items.Select(x => x.Id).Distinct().Count() != items.Length
             || models.Sum(x => (long)x.Mesh.TriangleCount) > MaxTriangles)
@@ -99,8 +128,17 @@ public sealed class ProjectStore(StlCodec stl)
             {
                 using (var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
                 {
-                    using (var stream = zip.CreateEntry(ManifestName).Open())
-                        JsonSerializer.Serialize(stream, new Manifest(Version, "mm", items));
+                    var manifest = JsonSerializer.SerializeToUtf8Bytes(new Manifest(Version, "mm", items, document.Groups.ToArray(),
+                        document.Assets.Select(a => new AssetEntry(a.Id, a.Name, a.MediaType)).ToArray(),
+                        document.Designs.ToArray(), document.SupportZ, document.SectionZ, document.Preparation), JsonOptions);
+                    if (manifest.Length > MaxManifestBytes) throw new InvalidDataException("Manifest demasiado grande.");
+                    using (var stream = zip.CreateEntry(ManifestName).Open()) stream.Write(manifest);
+                    foreach (var asset in document.Assets)
+                    {
+                        token.ThrowIfCancellationRequested();
+                        using var image = zip.CreateEntry($"images/{asset.Id:N}", CompressionLevel.Fastest).Open();
+                        image.Write(asset.Content);
+                    }
                     foreach (var model in models)
                     {
                         token.ThrowIfCancellationRequested();
@@ -125,6 +163,42 @@ public sealed class ProjectStore(StlCodec stl)
 
     private static string MeshPath(Guid id) => $"meshes/{id:N}.stl";
 
-    private sealed record Manifest(int Version, string Unit, ModelEntry[] Models);
-    private sealed record ModelEntry(Guid Id, string Name, ModelPose Pose);
+    private static void ValidateScene(SceneDocument document)
+    {
+        var models = document.Models.Select(m => m.Id).ToHashSet();
+        var assets = document.Assets.Select(a => a.Id).ToHashSet();
+        var groups = document.Groups.Select(g => g.Id).ToHashSet();
+        if (!double.IsFinite(document.SupportZ) || !double.IsFinite(document.SectionZ)
+            || !double.IsFinite(document.Preparation.Height)
+            || !float.IsFinite(document.Preparation.FacePoint.LengthSquared())
+            || !float.IsFinite(document.Preparation.FaceNormal.LengthSquared()) || document.Preparation.FaceNormal.LengthSquared() < 0.0001
+            || document.Preparation.Mode is not ("Silhouette" or "Rectangle" or "Individual" or "Section")
+            || document.Preparation.Reference is not ("Superior" or "Inferior" or "Support" or "Custom" or "Face")
+            || document.Assets.Count > 128 || assets.Count != document.Assets.Count
+            || groups.Count != document.Groups.Count || document.Groups.Count > MaxModels
+            || document.Groups.Any(g => g.Id == Guid.Empty || string.IsNullOrWhiteSpace(g.Name) || g.Name.Length > 255)
+            || document.Models.Any(m => m.GroupId is { } g && !groups.Contains(g))
+            || document.Assets.Any(a => a.Id == Guid.Empty || string.IsNullOrWhiteSpace(a.Name) || a.Name.Length > 255
+                || a.MediaType is not ("image/png" or "image/jpeg" or "application/x-lasermesh-uv") || a.Content.Length is <= 0 or > 64 * 1024 * 1024)
+            || document.Assets.Sum(a => (long)a.Content.Length) > 128 * 1024 * 1024
+            || document.Designs.Count > 512 || document.Designs.Select(d => d.Id).Distinct().Count() != document.Designs.Count
+            || document.Designs.Any(d => d.Id == Guid.Empty || !assets.Contains(d.AssetId) || !models.Contains(d.ModelId)
+                || string.IsNullOrWhiteSpace(d.Name) || d.Name.Length > 255
+                || d.AtlasId is { } atlasId && !assets.Contains(atlasId)
+                || !double.IsFinite(d.CylinderRadius) || d.CylinderRadius <= 0 || !double.IsFinite(d.SeamDegrees)
+                || !float.IsFinite(d.Crop.LengthSquared()) || d.Crop.X < 0 || d.Crop.Y < 0 || d.Crop.Z > 1 || d.Crop.W > 1
+                || d.Crop.Z <= d.Crop.X || d.Crop.W <= d.Crop.Y || d.Islands.Count > 100000
+                || d.Islands.Any(i => i.Chart < 0 || !double.IsFinite(i.Scale) || i.Scale <= 0 || !double.IsFinite(i.Angle) || !float.IsFinite(i.Offset.LengthSquared()))
+                || !Enum.IsDefined(d.Projection) || !double.IsFinite(d.Width) || !double.IsFinite(d.Height)
+                || d.Width <= 0 || d.Height <= 0 || !double.IsFinite(d.Angle) || !(d.Opacity is >= 0 and <= 1)
+                || !float.IsFinite(d.Origin.LengthSquared()) || !float.IsFinite(d.Normal.LengthSquared())
+                || d.Normal.LengthSquared() < 0.0001f))
+            throw new InvalidDataException("Recursos, grupos o diseños de escena inválidos.");
+    }
+
+    private sealed record Manifest(int Version, string Unit, ModelEntry[] Models, SceneGroup[]? Groups = null,
+        AssetEntry[]? Assets = null, SurfaceDesign[]? Designs = null, double SupportZ = 0, double SectionZ = 0,
+        PreparationSettings? Preparation = null);
+    private sealed record AssetEntry(Guid Id, string Name, string MediaType);
+    private sealed record ModelEntry(Guid Id, string Name, ModelPose Pose, bool Visible = true, bool Locked = false, Guid? GroupId = null);
 }

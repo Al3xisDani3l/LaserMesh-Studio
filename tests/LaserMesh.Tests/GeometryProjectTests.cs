@@ -114,7 +114,7 @@ public sealed class GeometryProjectTests
         {
             using (var zip = ZipFile.Open(path, ZipArchiveMode.Create))
             using (var writer = new StreamWriter(zip.CreateEntry("manifest.json").Open()))
-                writer.Write("""{"Version":2,"Unit":"mm","Models":[]}""");
+                writer.Write("""{"Version":3,"Unit":"mm","Models":[]}""");
             await Assert.ThrowsAsync<InvalidDataException>(() => new ProjectStore(Codec).OpenAsync(path, TestContextToken));
         }
         finally

@@ -5,6 +5,9 @@ namespace LaserMesh.Geometry;
 /// <summary>Immutable triangles with flat normals in object space, in millimetres.</summary>
 public sealed class TriangleMesh
 {
+    /// <summary>Creates an immutable validated triangle soup from independent vertices.</summary>
+    public static TriangleMesh FromTriangles(IEnumerable<Vector3> positions, CancellationToken cancellationToken = default)
+        => new(positions.ToArray(), cancellationToken);
     /// <summary>Maximum triangles accepted for one mesh.</summary>
     public const int MaxTriangles = 1_000_000;
 

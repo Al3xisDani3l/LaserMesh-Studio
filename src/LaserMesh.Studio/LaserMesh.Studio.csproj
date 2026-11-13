@@ -6,6 +6,9 @@
     <OutputType>WinExe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="LaserMesh.Studio.Tests" />
+    <ProjectReference Include="../LaserMesh.Imaging/LaserMesh.Imaging.csproj" />
+    <ProjectReference Include="../LaserMesh.Calibration/LaserMesh.Calibration.csproj" />
     <ProjectReference Include="../LaserMesh.Geometry/LaserMesh.Geometry.csproj" />
     <ProjectReference Include="../LaserMesh.Projects/LaserMesh.Projects.csproj" />
     <ProjectReference Include="../LaserMesh.Rendering/LaserMesh.Rendering.csproj" />

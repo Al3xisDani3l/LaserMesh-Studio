@@ -18,6 +18,7 @@ namespace LaserMesh.Studio;
 internal sealed record SceneItem(ProjectModel Model, MeshGeometry3D Geometry)
 {
     public string Name => Model.Name;
+    public string GroupLabel => Model.GroupId is { } group ? $"Grupo {group.ToString()[..8]}" : "Sin grupo";
     public string Dimensions => Format(Model.Mesh.Dimensions);
     public string Bounds => $"{Format(Model.Mesh.Minimum)} — {Format(Model.Mesh.Maximum)}";
     public string Centroid => Format(Model.Mesh.Centroid);
@@ -46,6 +47,9 @@ internal sealed partial class StudioViewModel : ObservableObject
         this.gcode = gcode;
         this.bluetooth = bluetooth;
         this.log = log;
+        history.Reset(CaptureDocument(), Selection);
+        numericTimer.Tick += (_, _) => CommitNumericEdit();
+        designTimer.Tick += (_, _) => CommitDesignEdit();
         try
         {
             RecentPaths = recents.Load();
@@ -69,18 +73,19 @@ internal sealed partial class StudioViewModel : ObservableObject
     [ObservableProperty] public partial string Y { get; set; } = "0";
     [ObservableProperty] public partial string Z { get; set; } = "0";
     [ObservableProperty] public partial string Rotation { get; set; } = "0";
+    [ObservableProperty] public partial string RotationX { get; set; } = "0";
+    [ObservableProperty] public partial string RotationY { get; set; } = "0";
     [ObservableProperty] public partial string Scale { get; set; } = "1";
 
     private bool IsDirty { get; set; }
 
     partial void OnSelectedChanged(SceneItem? value)
     {
-        var pose = value?.Model.Pose ?? ModelPose.Identity;
-        X = pose.X.ToString(CultureInfo.CurrentCulture);
-        Y = pose.Y.ToString(CultureInfo.CurrentCulture);
-        Z = pose.Z.ToString(CultureInfo.CurrentCulture);
-        Rotation = pose.Rotation.ToString(CultureInfo.CurrentCulture);
-        Scale = pose.Scale.ToString(CultureInfo.CurrentCulture);
+        if (!syncingSelection && value is not null && !Selection.Ids.Contains(value.Model.Id))
+            Selection.Replace([value.Model.Id], value.Model.Id);
+        if (!syncingSelection && value is null) Selection.Replace([]);
+        if (!numericEditing) RefreshInspector();
+        SelectionChanged?.Invoke();
     }
 
     [RelayCommand]
@@ -88,32 +93,16 @@ internal sealed partial class StudioViewModel : ObservableObject
     {
         if (IsBusy)
             return;
-        var dialog = new OpenFileDialog { Filter = "Malla STL (*.stl)|*.stl", Title = "Importar malla STL" };
+        var dialog = new OpenFileDialog { Filter = "Malla STL (*.stl)|*.stl", Title = "Importar mallas STL", Multiselect = true };
         if (dialog.ShowDialog(Application.Current.MainWindow) != true)
             return;
 
         var factor = UnitIndex switch { 1 => 10f, 2 => 1000f, 3 => 25.4f, _ => 1f };
-        await ImportFileAsync(dialog.FileName, factor);
+        await ImportFilesAsync(dialog.FileNames, factor);
     }
 
-    internal Task ImportFileAsync(string path, float factor)
-        => RunAsync("Importando STL", async token =>
-        {
-            if (Models.Count >= ProjectStore.MaxModels)
-                throw new InvalidDataException("Se alcanzó el límite de modelos por proyecto.");
-            var mesh = await stl.ImportAsync(path, factor, token);
-            if (Models.Sum(x => x.Model.Mesh.TriangleCount) + mesh.TriangleCount > ProjectStore.MaxTriangles)
-                throw new InvalidDataException("Se alcanzó el límite de triángulos por proyecto.");
-            var geometry = await meshAdapter.PrepareAsync(mesh, token);
-            var item = new SceneItem(new(Guid.NewGuid(), Path.GetFileNameWithoutExtension(path), mesh, ModelPose.Identity), geometry);
-            Models = [.. Models, item];
-            Selected = item;
-            UpdateDocument(projectPath, true);
-            SceneChanged?.Invoke(true);
-            log.LogInformation("Imported {Path} with {TriangleCount} triangles and scale {UnitScale}",
-                path, mesh.TriangleCount, factor);
-            Status = $"Importado · {item.Name}";
-        });
+    internal Task ImportFileAsync(string path, float factor) => ImportFilesAsync([path], factor);
+
     [RelayCommand]
     private Task NewAsync() => ResetAsync("Proyecto nuevo.");
 
@@ -127,6 +116,10 @@ internal sealed partial class StudioViewModel : ObservableObject
         Models = [];
         Selected = null;
         ClearToolpath();
+        sceneMetadata = new();
+        PreparationRestored?.Invoke(sceneMetadata.Preparation);
+        SelectedDesign = null; OnPropertyChanged(nameof(Designs)); DesignsChanged?.Invoke();
+        history.Reset(CaptureDocument(), Selection);
         UpdateDocument(null, false);
         SceneChanged?.Invoke(true);
         Status = message;
@@ -150,7 +143,8 @@ internal sealed partial class StudioViewModel : ObservableObject
 
         await RunAsync("Abriendo proyecto", async token =>
         {
-            var models = await store.OpenAsync(path, token);
+            var document = await store.OpenSceneAsync(path, token);
+            var models = document.Models;
             var prepared = new List<SceneItem>(models.Count);
             foreach (var model in models)
                 prepared.Add(new(model, await meshAdapter.PrepareAsync(model.Mesh, token)));
@@ -158,6 +152,10 @@ internal sealed partial class StudioViewModel : ObservableObject
             Models = prepared;
             Selected = Models.FirstOrDefault();
             ClearToolpath();
+            sceneMetadata = document;
+            PreparationRestored?.Invoke(document.Preparation);
+            SelectedDesign = Designs.FirstOrDefault(); OnPropertyChanged(nameof(Designs)); DesignsChanged?.Invoke();
+            history.Reset(CaptureDocument(), Selection);
             UpdateDocument(path, false);
             SceneChanged?.Invoke(true);
             await RecordRecentAsync(path);
@@ -194,7 +192,9 @@ internal sealed partial class StudioViewModel : ObservableObject
 
         return await RunAsync("Guardando proyecto", async token =>
         {
-            await store.SaveAsync(path, Models.Select(x => x.Model).ToArray(), token);
+            CommitNumericEdit(); CommitDesignEdit();
+            await store.SaveSceneAsync(path, CaptureDocument(), token);
+            history.MarkSaved();
             UpdateDocument(path, false);
             await RecordRecentAsync(path);
             log.LogInformation("Saved project {Path} with {ModelCount} models", path, Models.Count);
@@ -207,17 +207,24 @@ internal sealed partial class StudioViewModel : ObservableObject
     {
         if (IsBusy || Selected is not { } selected)
             return;
+        if (selected.Model.Locked) { Status = "El objeto activo está bloqueado; elige una pieza editable."; return; }
         if (!double.TryParse(X, NumberStyles.Float, CultureInfo.CurrentCulture, out var x)
             || !double.TryParse(Y, NumberStyles.Float, CultureInfo.CurrentCulture, out var y)
             || !double.TryParse(Z, NumberStyles.Float, CultureInfo.CurrentCulture, out var z)
             || !double.TryParse(Rotation, NumberStyles.Float, CultureInfo.CurrentCulture, out var rotation)
+            || !double.TryParse(RotationX, NumberStyles.Float, CultureInfo.CurrentCulture, out var rx)
+            || !double.TryParse(RotationY, NumberStyles.Float, CultureInfo.CurrentCulture, out var ry)
             || !double.TryParse(Scale, NumberStyles.Float, CultureInfo.CurrentCulture, out var scale))
         {
             Status = "Introduce valores numéricos para la transformación.";
             return;
         }
 
-        var pose = new ModelPose(x, y, z, rotation, scale);
+        var orientation = System.Numerics.Quaternion.CreateFromRotationMatrix(
+            System.Numerics.Matrix4x4.CreateRotationX((float)(rx * Math.PI / 180))
+            * System.Numerics.Matrix4x4.CreateRotationY((float)(ry * Math.PI / 180))
+            * System.Numerics.Matrix4x4.CreateRotationZ((float)(rotation * Math.PI / 180)));
+        var pose = new ModelPose(x, y, z, 0, scale) { Orientation = orientation };
         if (!pose.IsValid())
         {
             Status = "Transformación fuera de rango. Giro de ±360° y escala de 0.0001 a 1000.";
@@ -226,25 +233,11 @@ internal sealed partial class StudioViewModel : ObservableObject
         if (pose == selected.Model.Pose)
             return;
 
-        var updated = selected with { Model = selected.Model with { Pose = pose } };
-        Models = Models.Select(item => item == selected ? updated : item).ToArray();
-        Selected = updated;
-        UpdateDocument(projectPath, true);
-        SceneChanged?.Invoke(false);
-        Status = $"Transformado · {updated.Name}";
+        ApplyInspectorPose(selected.Model.Pose, pose);
     }
 
     [RelayCommand]
-    private void Remove()
-    {
-        if (IsBusy || Selected is not { } selected)
-            return;
-        Models = Models.Where(x => x != selected).ToArray();
-        Selected = Models.FirstOrDefault();
-        UpdateDocument(projectPath, true);
-        SceneChanged?.Invoke(false);
-        Status = $"Quitado · {selected.Name}";
-    }
+    private void Remove() => RemoveSelection();
 
     [RelayCommand]
     private void Cancel() => operation?.Cancel();
@@ -303,7 +296,7 @@ internal sealed partial class StudioViewModel : ObservableObject
             return false;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or ArgumentException
-            or InvalidDataException or TimeoutException)
+            or InvalidDataException or TimeoutException or InvalidOperationException or NotSupportedException or DllNotFoundException or EntryPointNotFoundException or BadImageFormatException)
         {
             log.LogWarning(ex, "Failed to execute {Operation}", action);
             Status = $"Error · {ex.Message}";

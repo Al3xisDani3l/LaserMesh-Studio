@@ -82,9 +82,14 @@ public partial class MainWindow
         SetFaceSelection(false);
         ClearFaceButton.IsEnabled = true;
         UpdateSurfaceReference(forcePlacement: true);
+        if (IsLoaded && !restoringPreparation) viewModel.RecordPreparationChange();
     }
 
-    private void OnClearFace(object sender, RoutedEventArgs e) => ClearSurfaceReference();
+    private void OnClearFace(object sender, RoutedEventArgs e)
+    {
+        ClearSurfaceReference();
+        viewModel.RecordPreparationChange();
+    }
 
     private void ClearSurfaceReference()
     {
@@ -124,6 +129,12 @@ public partial class MainWindow
         {
             var direction = transform.Transform(new Vector3D(face.Normal.X, face.Normal.Y, face.Normal.Z));
             direction.Normalize();
+            if (Math.Abs(direction.Z) < SurfaceProjection.MinimumVerticalComponent)
+            {
+                FaceSummary.Text = "La cara transformada es casi vertical; proyección desde arriba no disponible.";
+                SyncField();
+                return;
+            }
             var matrix = SurfaceProjection.Create(new((float)referencePoint.X, (float)referencePoint.Y, (float)referencePoint.Z),
                 new((float)direction.X, (float)direction.Y, (float)direction.Z), pose.Rotation);
             pathPlacement.Matrix = new Matrix3D(

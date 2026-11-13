@@ -4,3 +4,4 @@
 TestResults/
 *.user
 __pycache__/
+native/**/bin/
