@@ -4,10 +4,11 @@ Aplicación CAD/CAM para Windows x64. La primera fase permite importar mallas ST
 
 ## Ejecutar
 
-Instala el SDK de .NET 10 x64. Ejecuta desde la raíz del repositorio:
+Instala el SDK de .NET 10 x64 y las herramientas de compilación de C++ de Visual Studio (MSVC x64 y Windows SDK). Desde la raíz del repositorio, inicializa los submódulos y compila la DLL nativa de xatlas antes de compilar la solución. La requieren el mapeo UV automático y su prueba de integración:
 
 ```powershell
-git submodule update --init
+git submodule update --init --recursive
+.\native\LaserMesh.Uv\build.cmd
 dotnet build LaserMeshStudio.sln -c Release
 dotnet test LaserMeshStudio.sln -c Release --no-build
 dotnet run --project src/LaserMesh.Studio -c Release --no-build

@@ -1,5 +1,7 @@
 # Pruebas
 
+En una copia nueva, sigue los [pasos de preparación del README](../README.md#ejecutar) para inicializar los submódulos y compilar la DLL nativa de xatlas antes de compilar y ejecutar las pruebas:
+
 ```powershell
 dotnet build LaserMeshStudio.sln -c Release
 dotnet test LaserMeshStudio.sln -c Release --no-build

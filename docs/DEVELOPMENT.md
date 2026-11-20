@@ -1,6 +1,6 @@
 # Desarrollo
 
-Requisitos de la aplicación: Windows x64, SDK estable .NET 10 y entorno gráfico DirectX. El destino Windows 10.0.19041.0 incorpora las proyecciones WinRT para BLE. Los módulos de geometría, proyectos, grabado, escaneo y protocolo se prueban con xUnit. El flujo normal de compilación no requiere Kinect SDK, Python ni LaserPecker Design Space.
+Requisitos de la aplicación: Windows x64, SDK estable .NET 10 y entorno gráfico DirectX. El destino Windows 10.0.19041.0 incorpora las proyecciones WinRT para BLE. Los módulos de geometría, proyectos, grabado, escaneo y protocolo se prueban con xUnit. El flujo normal de compilación no requiere Kinect SDK, Python ni LaserPecker Design Space. La DLL nativa de xatlas se compila con MSVC x64 y Windows SDK antes de compilar la solución; sigue los [pasos de preparación del README](../README.md#ejecutar).
 
 | Paquete | Versión fijada | Compatibilidad y licencia |
 | --- | --- | --- |
